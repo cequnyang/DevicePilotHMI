@@ -1,0 +1,87 @@
+name: Bug report
+description: Report a reproducible problem in DevicePilotHMI
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Please provide enough detail to reproduce it.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Briefly describe the problem.
+      placeholder: The settings page shows the wrong value after Revert.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the project is affected?
+      options:
+        - UI / QML
+        - Runtime / state machine
+        - Alarm handling
+        - Settings workflow
+        - Build / CI
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the exact steps that trigger the problem.
+      placeholder: |
+        1. Open the Settings page
+        2. Click Reset Defaults
+        3. Click Revert
+        4. Observe the Warning Temperature field
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened?
+      placeholder: Warning Temperature becomes 94 instead of the persisted value 99.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened instead?
+      placeholder: Revert should restore the persisted settings values.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Describe the environment where the issue occurs.
+      placeholder: |
+        OS: Windows 11
+        Qt: 6.11.x
+        Compiler: MinGW 64-bit
+        App version / commit: v0.1.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or extra context
+      description: Add screenshots, recordings, or any extra detail if helpful.
+      placeholder: Drag and drop images here if available.
+

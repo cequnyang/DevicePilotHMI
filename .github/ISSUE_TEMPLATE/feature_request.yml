@@ -1,0 +1,67 @@
+name: Feature request
+description: Suggest an improvement or a new capability for DevicePilotHMI
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. Please describe the problem the feature would solve and what the result should look like.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What limitation or need are you trying to address?
+      placeholder: It is hard to understand why Apply is disabled when the runtime is not in an allowed state.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the feature or improvement you want.
+      placeholder: Add a clearer inline explanation near the Apply button with the current restriction reason.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the project would this affect?
+      options:
+        - UI / QML
+        - Runtime / state machine
+        - Alarm handling
+        - Settings workflow
+        - Build / CI
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe any other solutions or workarounds you considered.
+      placeholder: A tooltip could help, but it would be less visible than an inline message.
+
+  - type: textarea
+    id: value
+    attributes:
+      label: Why this matters
+      description: Explain the expected value or impact of this feature.
+      placeholder: It would make the settings workflow easier to understand for new users.
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Extra context
+      description: Add mockups, references, screenshots, or anything else that helps.
+      placeholder: Drag and drop images or include links if relevant.
