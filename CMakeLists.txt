@@ -84,3 +84,12 @@ target_link_libraries(DevicePilotHMI
         project_options
         project_warnings
 )
+
+find_package(Qt6 REQUIRED COMPONENTS Quick Qml Test)
+
+include(CTest)
+enable_testing()
+
+if (BUILD_TESTING)
+    add_subdirectory(tests)
+endif()

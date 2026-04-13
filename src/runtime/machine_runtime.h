@@ -9,6 +9,12 @@
 class LogInterface;
 class SettingsManager;
 
+namespace RuntimeInit {
+static constexpr int kTemperature = 25;
+static constexpr int kPressure = 80;
+static constexpr int kSpeed = 0;
+}; // namespace RuntimeInit
+
 class MachineRuntime : public QObject
 {
     Q_OBJECT
@@ -61,10 +67,6 @@ public:
     void onEnterFault();
 
 private:
-    static constexpr int kInitTemperature = 25;
-    static constexpr int kInitPressure = 80;
-    static constexpr int kInitSpeed = 0;
-
     enum class PendingTransition { None, FinishStart, FinishStop };
 
     void setState(State newState);
@@ -76,9 +78,9 @@ private:
     State m_state{State::Idle};
     PendingTransition m_pendingTransition{PendingTransition::None};
 
-    double m_temperature{25.0};
-    double m_pressure{80.0};
-    int m_speed{0};
+    double m_temperature{RuntimeInit::kTemperature};
+    double m_pressure{RuntimeInit::kPressure};
+    int m_speed{RuntimeInit::kSpeed};
 
     QTimer m_updateTimer;
     QTimer m_transitionTimer;

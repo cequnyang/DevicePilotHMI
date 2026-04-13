@@ -193,16 +193,16 @@ QString MachineRuntime::stateToString(State state) const
 
 void MachineRuntime::resetMeasurementsToIdle()
 {
-    if (m_temperature != kInitTemperature) {
-        m_temperature = kInitTemperature;
+    if (m_temperature != RuntimeInit::kTemperature) {
+        m_temperature = RuntimeInit::kTemperature;
         emit temperatureChanged();
     }
-    if (m_pressure != kInitPressure) {
-        m_pressure = kInitPressure;
+    if (m_pressure != RuntimeInit::kPressure) {
+        m_pressure = RuntimeInit::kPressure;
         emit pressureChanged();
     }
-    if (m_speed != kInitSpeed) {
-        m_speed = kInitSpeed;
+    if (m_speed != RuntimeInit::kSpeed) {
+        m_speed = RuntimeInit::kSpeed;
         emit speedChanged();
     }
 }

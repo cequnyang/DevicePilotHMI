@@ -28,12 +28,17 @@ jobs:
       - name: Configure
         shell: pwsh
         run: |
-          qt-cmake -S . -B build-ci -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+          qt-cmake -S . -B build-ci -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
 
       - name: Build
         shell: pwsh
         run: |
           cmake --build build-ci --parallel
+
+      - name: Run Tests
+        shell: pwsh
+        run: |
+          ctest --test-dir build-ci --output-on-failure --parallel
 
       - name: Package
         shell: pwsh

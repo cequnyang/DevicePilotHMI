@@ -239,7 +239,7 @@ Typical usage flow:
 
 - The runtime is simulated; there is no real device backend yet.
 - Alarm handling is still simple and does not implement a full industrial alarm lifecycle such as acknowledge/latched/cleared state modeling.
-- There is no automated test suite yet.
+- The automated test suite currently focuses on core C++ modules such as validation, settings persistence, apply policy, session state, draft behavior, and alarm transitions; it does not cover QML UI behavior end-to-end.
 - The project is currently organized as a single application target rather than a split core library plus app shell.
 
 ## Development Notes
@@ -248,8 +248,8 @@ This codebase is most useful as:
 
 - a Qt/QML architecture practice project
 - a small HMI portfolio piece
-- a base for further refactoring toward real-device integration, stronger alarm modeling, and automated tests
+- a base for further refactoring toward real-device integration, stronger alarm modeling, deeper test coverage, and a cleaner core/app split
 
 ## License
 
-No license has been added yet. If you plan to publish the repository, add an explicit license file.
+This repository is licensed under the MIT License. See [LICENSE](LICENSE).
