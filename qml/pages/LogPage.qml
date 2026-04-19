@@ -6,7 +6,8 @@ import DevicePilotHMI
 Page {
     id: root
 
-    required property LogModel logModel
+    required property var logModel
+    required property var filteredLogModel
 
     property string selectedLevel: ""
 
@@ -14,12 +15,28 @@ Page {
         color: "#0b1220"
     }
 
-    LogFilterProxyModel {
-        id: filteredLogModel
-        sourceLogModel: root.logModel
-        levelFilter: root.selectedLevel
-        searchText: searchField.text
-        showOnlyUnacknowledged: unackOnlyCheck.checked
+    Binding {
+        target: root.filteredLogModel
+        property: "sourceLogModel"
+        value: root.logModel
+    }
+
+    Binding {
+        target: root.filteredLogModel
+        property: "levelFilter"
+        value: root.selectedLevel
+    }
+
+    Binding {
+        target: root.filteredLogModel
+        property: "searchText"
+        value: searchField.text
+    }
+
+    Binding {
+        target: root.filteredLogModel
+        property: "showOnlyUnacknowledged"
+        value: unackOnlyCheck.checked
     }
 
     ColumnLayout {
@@ -97,7 +114,7 @@ Page {
                 anchors.fill: parent
                 anchors.margins: 8
                 clip: true
-                model: filteredLogModel
+                model: root.filteredLogModel
                 spacing: 6
 
                 delegate: Rectangle {
@@ -120,7 +137,7 @@ Page {
 
                         CheckBox {
                             checked: acknowledged
-                            onToggled: filteredLogModel.setAcknowledged(index, checked)
+                            onToggled: root.filteredLogModel.setAcknowledged(index, checked)
                         }
 
                         Label {

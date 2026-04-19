@@ -9,8 +9,8 @@ ScrollView {
     id: root
     clip: true
 
-    required property MachineRuntime runtime
-    required property AlarmManager alarm
+    required property var runtime
+    required property var alarm
 
     ColumnLayout {
         spacing: 16

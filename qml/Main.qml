@@ -8,10 +8,12 @@ import "pages" as Pages
 ApplicationWindow {
     id: root
 
-    required property MachineRuntime runtime
-    required property AlarmManager alarm
-    required property LogModel logModel
-    required property SettingsSession settingsSession
+    required property var simulCtrl
+    required property var runtime
+    required property var alarm
+    required property var logModel
+    required property var filteredLogModel
+    required property var settingsSession
 
     width: 1100
     height: 760
@@ -19,6 +21,19 @@ ApplicationWindow {
     title: "DevicePilotHMI"
 
     property int currentPageIndex: 0
+    property var scenarioOptions: [
+        { label: "Normal Ramp", scenario: SimulationScenario.NormalRamp },
+        { label: "Overload", scenario: SimulationScenario.Overload },
+        { label: "Cooling Failure", scenario: SimulationScenario.CoolingFailure }
+    ]
+
+    function scenarioIndexFor(value) {
+        for (let i = 0; i < scenarioOptions.length; ++i) {
+            if (scenarioOptions[i].scenario === value)
+                return i
+        }
+        return 0
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -42,6 +57,24 @@ ApplicationWindow {
                 }
 
                 Item { Layout.fillWidth: true }
+
+                Label {
+                    text: "Scenario:"
+                    color: "#d1d5db"
+                    font.pixelSize: 14
+                }
+
+                ComboBox {
+                    id: scenarioCombo
+                    Layout.preferredWidth: 200
+                    model: root.scenarioOptions
+                    textRole: "label"
+                    currentIndex: root.scenarioIndexFor(root.simulCtrl.scenario)
+                    enabled: root.runtime.canStart
+                    onActivated: {
+                        root.simulCtrl.scenario = root.scenarioOptions[currentIndex].scenario
+                    }
+                }
 
                 Label {
                     text: root.runtime.status
@@ -74,6 +107,7 @@ ApplicationWindow {
 
             Pages.LogPage {
                 logModel: root.logModel
+                filteredLogModel: root.filteredLogModel
             }
 
             Pages.SettingsPage {

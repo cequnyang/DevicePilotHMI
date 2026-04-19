@@ -4,6 +4,7 @@
 #include <QTimer>
 
 #include "backend/machine_backend.h"
+#include "backend/simulation_scenario.h"
 
 class SettingsManager;
 
@@ -18,6 +19,12 @@ public:
     void requestStop() override;
     void requestResetFault() override;
     void requestSafeShutdown() override;
+
+    Simulation::Scenario currentScenario() const;
+    void setScenario(Simulation::Scenario scenario);
+
+signals:
+    void scenarioChanged();
 
 private slots:
     void updateSimulation();
@@ -37,4 +44,5 @@ private:
     TelemetryFrame m_telemetry{};
     QTimer m_updateTimer;
     QTimer m_transitionTimer;
+    Simulation::Scenario m_scenario{Simulation::Scenario::NormalRamp};
 };

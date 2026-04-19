@@ -78,6 +78,27 @@ void SimulatedMachineBackend::requestSafeShutdown()
     setState(MachineState::Fault);
 }
 
+Simulation::Scenario SimulatedMachineBackend::currentScenario() const
+{
+    return m_scenario;
+}
+
+void SimulatedMachineBackend::setScenario(Simulation::Scenario scenario)
+{
+    if (m_scenario == scenario) {
+        return;
+    }
+
+    if (m_state != MachineState::Idle) {
+        return;
+    }
+
+    m_scenario = scenario;
+    resetTelemetryToIdle();
+    publishTelemetry();
+    emit scenarioChanged();
+}
+
 void SimulatedMachineBackend::updateSimulation()
 {
     if (m_state != MachineState::Running) {
