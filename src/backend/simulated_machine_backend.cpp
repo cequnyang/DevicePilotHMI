@@ -7,6 +7,8 @@
 SimulatedMachineBackend::SimulatedMachineBackend(SettingsManager &settings, QObject *parent)
     : MachineBackend(parent)
     , m_settings(&settings)
+    , m_simulationStrategy(makeSimulationStrategy(m_scenario))
+
 {
     Q_ASSERT(m_settings);
 
@@ -94,6 +96,8 @@ void SimulatedMachineBackend::setScenario(Simulation::Scenario scenario)
     }
 
     m_scenario = scenario;
+    m_simulationStrategy = makeSimulationStrategy(scenario);
+    m_simulationStrategy->reset();
     resetTelemetryToIdle();
     publishTelemetry();
     emit scenarioChanged();
@@ -101,13 +105,11 @@ void SimulatedMachineBackend::setScenario(Simulation::Scenario scenario)
 
 void SimulatedMachineBackend::updateSimulation()
 {
-    if (m_state != MachineState::Running) {
+    if (m_state != MachineState::Running || !m_simulationStrategy) {
         return;
     }
 
-    m_telemetry.temperature += 1.6;
-    m_telemetry.pressure += 2.4;
-    m_telemetry.speed = std::min(3600, m_telemetry.speed + 120);
+    m_simulationStrategy->advance(m_telemetry, m_settings->snapshot());
     publishTelemetry();
 }
 
@@ -116,7 +118,10 @@ void SimulatedMachineBackend::onTransitionTimeout()
     switch (m_pendingTransition) {
     case PendingTransition::FinishStart:
         m_pendingTransition = PendingTransition::None;
-        m_telemetry.speed = 800;
+        if (m_simulationStrategy) {
+            m_simulationStrategy->reset();
+            m_telemetry.speed = m_simulationStrategy->startupSpeed(m_settings->snapshot());
+        }
         publishTelemetry();
         setState(MachineState::Running);
         m_updateTimer.start();
