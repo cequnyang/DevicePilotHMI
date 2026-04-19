@@ -281,7 +281,59 @@ If you prefer local overrides instead of persistent user environment variables, 
 
 ## Run
 
-After building, launch the generated `DevicePilotHMI` executable.
+There are two different runtime layouts:
+
+- development build tree
+- deployed install/package layout
+
+The executable under `build/<preset>/bin/` is a development artifact. It runs when the process already has access to the matching Qt runtime, plugins, and QML import paths, such as:
+
+- Qt Creator with the preset kit configured
+- a shell where the matching Qt environment is already exported
+
+If you want a locally runnable layout that does not depend on your current shell's Qt setup, run the install step and launch from the staged output instead.
+
+Windows:
+
+```powershell
+.\scripts\build.ps1 -Preset windows-mingw-debug -Install
+```
+
+Then start:
+
+```text
+build/windows-mingw-debug/stage/bin/DevicePilotHMI.exe
+```
+
+Linux:
+
+```bash
+./scripts/build.sh --preset linux-ninja-debug --install --qt-root /home/<user>/Qt/6.11.0/gcc_64
+```
+
+Then start:
+
+```text
+build/linux-ninja-debug/stage/bin/DevicePilotHMI
+```
+
+For a redistributable Windows package, use the packaging script:
+
+```powershell
+.\scripts\package_windows.ps1 -Preset windows-mingw-release
+```
+
+This creates a zip under `release/`, for example:
+
+```text
+release/DevicePilotHMI-windows-mingw-x64.zip
+```
+
+Unzip it and run:
+
+```text
+bin/DevicePilotHMI.exe
+```
 
 Typical usage flow:
 

@@ -6,7 +6,7 @@ import DevicePilotHMI
 Page {
     id: root
 
-    required property SettingsSession session
+    required property var session
 
     background: Rectangle {
         color: "#0b1220"

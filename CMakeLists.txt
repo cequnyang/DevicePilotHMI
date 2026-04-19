@@ -60,6 +60,10 @@ qt_add_qml_module(DevicePilotHMI
         src/backend/machine_backend.cpp
         src/backend/simulated_machine_backend.h
         src/backend/simulated_machine_backend.cpp
+        src/backend/simulation_scenario.h
+        src/backend/simulation_scenario.cpp
+        src/backend/simulation_control.h
+        src/backend/simulation_control.cpp
         src/log/log_model.h
         src/log/log_model.cpp
         src/log/log_filter_proxy_model.h
@@ -107,6 +111,7 @@ target_include_directories(DevicePilotHMI PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/log
     ${CMAKE_CURRENT_SOURCE_DIR}/src/alarm
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/backend
     ${CMAKE_CURRENT_SOURCE_DIR}/src/runtime
     ${CMAKE_CURRENT_SOURCE_DIR}/src/settings
 )
