@@ -41,6 +41,10 @@ public:
     bool canStop() const;
     bool canResetFault() const;
 
+    QVariantList temperatureHistory() const;
+    QVariantList pressureHistory() const;
+    QVariantList speedHistory() const;
+
     Q_INVOKABLE void start();
     Q_INVOKABLE void stop();
     Q_INVOKABLE void resetFault();

@@ -2,9 +2,11 @@
 
 #include <QPointer>
 #include <QTimer>
+#include <memory>
 
 #include "backend/machine_backend.h"
 #include "backend/simulation_scenario.h"
+#include "backend/simulation_strategy.h"
 
 class SettingsManager;
 
@@ -45,4 +47,5 @@ private:
     QTimer m_updateTimer;
     QTimer m_transitionTimer;
     Simulation::Scenario m_scenario{Simulation::Scenario::NormalRamp};
+    std::unique_ptr<SimulationStrategy> m_simulationStrategy;
 };
