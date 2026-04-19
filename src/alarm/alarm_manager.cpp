@@ -24,12 +24,28 @@ AlarmManager::AlarmManager(LogInterface &logInterface,
     });
 
     connect(m_runtime, &MachineRuntime::resetAlarmState, this, [this]() {
+        const bool hadActiveAlarm = m_alarmLevel != AlarmLevel::Normal;
         m_alarmLevel = AlarmLevel::Normal;
         m_alarmText = "System normal";
         emit alarmChanged();
+        if (hadActiveAlarm) {
+            emit alarmCleared();
+        }
     });
 
     connect(m_runtime, &MachineRuntime::evaluateAlarm, this, &AlarmManager::evaluateAlarm);
+
+    connect(this, &AlarmManager::warningEntered, m_runtime, [this](const QString &) {
+        m_runtime->recordHistoryMarker("warning", "Warning", "#f59e0b");
+    });
+
+    connect(this, &AlarmManager::faultEntered, m_runtime, [this](const QString &) {
+        m_runtime->recordHistoryMarker("fault", "Fault", "#ef4444");
+    });
+
+    connect(this, &AlarmManager::alarmCleared, m_runtime, [this]() {
+        m_runtime->recordHistoryMarker("clear", "Clear", "#cbd5e1");
+    });
 }
 
 QString AlarmManager::alarmText() const
@@ -79,6 +95,9 @@ void AlarmManager::evaluateAlarm()
     if (m_alarmLevel != newLevel || m_alarmText != newAlarmText) {
         if (newLevel == AlarmLevel::Warning && m_alarmLevel != AlarmLevel::Warning) {
             appendLog("WARNING", newAlarmText);
+            emit warningEntered(newAlarmText);
+        } else if (newLevel == AlarmLevel::Normal && m_alarmLevel != AlarmLevel::Normal) {
+            emit alarmCleared();
         }
 
         m_alarmLevel = newLevel;
@@ -97,6 +116,7 @@ void AlarmManager::enterFault(const QString &reason)
     m_alarmText = reason;
     m_runtime->enterFault();
     emit alarmChanged();
+    emit faultEntered(reason);
 
     appendLog("FAULT", reason);
 }

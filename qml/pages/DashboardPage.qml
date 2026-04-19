@@ -51,6 +51,104 @@ ScrollView {
             }
         }
 
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 16
+
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 140
+                radius: 10
+                color: "#111827"
+                border.width: 1
+                border.color: "#374151"
+
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 8
+
+                    Label {
+                        text: "Temperature Trend"
+                        color: "#9ca3af"
+                    }
+
+                    Components.TrendChart {
+                        width: parent.width
+                        height: 80
+                        samples: root.runtime.temperatureHistory
+                        markers: root.runtime.historyMarkers
+                        historyStartSampleIndex: root.runtime.historyStartSampleIndex
+                        minValue: 20
+                        maxValue: 120
+                        lineColor: "#f97316"
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 140
+                radius: 10
+                color: "#111827"
+                border.width: 1
+                border.color: "#374151"
+
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 8
+
+                    Label {
+                        text: "Pressure Trend"
+                        color: "#9ca3af"
+                    }
+
+                    Components.TrendChart {
+                        width: parent.width
+                        height: 80
+                        samples: root.runtime.pressureHistory
+                        markers: root.runtime.historyMarkers
+                        historyStartSampleIndex: root.runtime.historyStartSampleIndex
+                        minValue: 70
+                        maxValue: 160
+                        lineColor: "#38bdf8"
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 140
+                radius: 10
+                color: "#111827"
+                border.width: 1
+                border.color: "#374151"
+
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 8
+
+                    Label {
+                        text: "Speed Trend"
+                        color: "#9ca3af"
+                    }
+
+                    Components.TrendChart {
+                        width: parent.width
+                        height: 80
+                        samples: root.runtime.speedHistory
+                        markers: root.runtime.historyMarkers
+                        historyStartSampleIndex: root.runtime.historyStartSampleIndex
+                        minValue: 0
+                        maxValue: 3600
+                        lineColor: "#22c55e"
+                    }
+                }
+            }
+        }
+
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: 120
