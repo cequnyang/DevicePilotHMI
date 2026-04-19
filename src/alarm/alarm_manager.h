@@ -31,6 +31,9 @@ public:
 
 signals:
     void alarmChanged();
+    void warningEntered(const QString &reason);
+    void faultEntered(const QString &reason);
+    void alarmCleared();
 
 private:
     enum class AlarmLevel { Normal, Warning, Fault };

@@ -60,6 +60,31 @@ bool MachineRuntime::canResetFault() const
     return m_state == State::Fault;
 }
 
+QVariantList MachineRuntime::temperatureHistory() const
+{
+    return m_temperatureHistory;
+}
+
+QVariantList MachineRuntime::pressureHistory() const
+{
+    return m_pressureHistory;
+}
+
+QVariantList MachineRuntime::speedHistory() const
+{
+    return m_speedHistory;
+}
+
+QVariantList MachineRuntime::historyMarkers() const
+{
+    return m_historyMarkers;
+}
+
+int MachineRuntime::historyStartSampleIndex() const
+{
+    return m_historyStartSampleIndex;
+}
+
 MachineRuntime::State MachineRuntime::state() const
 {
     return m_state;
@@ -72,6 +97,7 @@ void MachineRuntime::start()
     }
 
     appendLog("INFO", "Start requested");
+    recordHistoryMarker("start", "Start", "#22c55e");
     m_backend->requestStart();
 }
 
@@ -82,6 +108,7 @@ void MachineRuntime::stop()
     }
 
     appendLog("INFO", "Stop requested");
+    recordHistoryMarker("stop", "Stop", "#94a3b8");
     m_backend->requestStop();
 }
 
@@ -92,9 +119,25 @@ void MachineRuntime::resetFault()
     }
 
     appendLog("INFO", "Fault reset requested");
+    recordHistoryMarker("reset", "Reset", "#a78bfa");
     m_faultResetPending = true;
     m_backend->requestResetFault();
 }
+
+namespace {
+void appendSample(QVariantList &history, double value, int capacity)
+{
+    history.append(QVariant::fromValue(value));
+    while (history.size() > capacity) {
+        history.removeFirst();
+    }
+}
+int markerSampleIndex(const QVariant &markerValue)
+{
+    const QVariantMap marker = markerValue.toMap();
+    return marker.value("sampleIndex", -1).toInt();
+}
+} // namespace
 
 void MachineRuntime::onTelemetryReceived(TelemetryFrame frame)
 {
@@ -121,6 +164,17 @@ void MachineRuntime::onTelemetryReceived(TelemetryFrame frame)
     if (telemetryChanged && m_state == State::Running) {
         emit evaluateAlarm();
     }
+
+    m_lastSampleIndex = m_nextSampleIndex++;
+    appendSample(m_temperatureHistory, frame.temperature, kHistoryCapacity);
+    appendSample(m_pressureHistory, frame.pressure, kHistoryCapacity);
+    appendSample(m_speedHistory, frame.speed, kHistoryCapacity);
+
+    const int historySize = static_cast<int>(m_temperatureHistory.size());
+    m_historyStartSampleIndex = std::max(0, m_nextSampleIndex - historySize);
+    trimHistoryMarkers();
+
+    emit historyChanged();
 }
 
 void MachineRuntime::onStateReported(MachineState state)
@@ -150,12 +204,14 @@ void MachineRuntime::onStateReported(MachineState state)
 
     if (previousState == State::Starting && m_state == State::Running) {
         appendLog("INFO", "Transition to Running completed");
+        recordHistoryMarker("running", "Running", "#38bdf8");
         emit evaluateAlarm();
         return;
     }
 
     if (previousState == State::Stopping && m_state == State::Idle) {
         appendLog("INFO", "Transition to Idle completed");
+        recordHistoryMarker("idle", "Idle", "#cbd5e1");
         emit resetAlarmState();
         return;
     }
@@ -163,6 +219,7 @@ void MachineRuntime::onStateReported(MachineState state)
     if (previousState == State::Fault && m_state == State::Idle) {
         m_faultResetPending = false;
         appendLog("INFO", "Fault reset completed");
+        recordHistoryMarker("idle", "Idle", "#cbd5e1");
         emit resetAlarmState();
     }
 }
@@ -206,4 +263,30 @@ QString MachineRuntime::stateToString(State state) const
 void MachineRuntime::appendLog(const QString &level, const QString &message)
 {
     m_logInterface->appendLog(level, message);
+}
+
+void MachineRuntime::recordHistoryMarker(const QString &kind,
+                                         const QString &label,
+                                         const QString &color)
+{
+    QVariantMap marker;
+    marker["sampleIndex"] = std::max(0, m_lastSampleIndex >= 0 ? m_lastSampleIndex : m_nextSampleIndex);
+    marker["kind"] = kind;
+    marker["label"] = label;
+    marker["color"] = color;
+
+    m_historyMarkers.append(marker);
+    trimHistoryMarkers();
+    emit historyChanged();
+}
+
+void MachineRuntime::trimHistoryMarkers()
+{
+    while (!m_historyMarkers.isEmpty()) {
+        const int sampleIndex = markerSampleIndex(m_historyMarkers.first());
+        if (sampleIndex >= m_historyStartSampleIndex) {
+            break;
+        }
+        m_historyMarkers.removeFirst();
+    }
 }

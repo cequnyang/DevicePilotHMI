@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QString>
+#include <QVariant>
 #include <qqmlintegration.h>
 
 class MachineBackend;
@@ -25,6 +26,12 @@ class MachineRuntime : public QObject
     Q_PROPERTY(bool canStop READ canStop NOTIFY stateChanged)
     Q_PROPERTY(bool canResetFault READ canResetFault NOTIFY stateChanged)
 
+    Q_PROPERTY(QVariantList temperatureHistory READ temperatureHistory NOTIFY historyChanged)
+    Q_PROPERTY(QVariantList pressureHistory READ pressureHistory NOTIFY historyChanged)
+    Q_PROPERTY(QVariantList speedHistory READ speedHistory NOTIFY historyChanged)
+    Q_PROPERTY(QVariantList historyMarkers READ historyMarkers NOTIFY historyChanged)
+    Q_PROPERTY(int historyStartSampleIndex READ historyStartSampleIndex NOTIFY historyChanged)
+
 public:
     using State = MachineState;
 
@@ -44,6 +51,9 @@ public:
     QVariantList temperatureHistory() const;
     QVariantList pressureHistory() const;
     QVariantList speedHistory() const;
+    QVariantList historyMarkers() const;
+    int historyStartSampleIndex() const;
+    void recordHistoryMarker(const QString &kind, const QString &label, const QString &color);
 
     Q_INVOKABLE void start();
     Q_INVOKABLE void stop();
@@ -57,6 +67,7 @@ signals:
     void stateChanged();
     void evaluateAlarm();
     void resetAlarmState();
+    void historyChanged();
 
 private slots:
     void onTelemetryReceived(TelemetryFrame frame);
@@ -69,6 +80,7 @@ public:
 private:
     QString stateToString(State state) const;
     void appendLog(const QString &level, const QString &message);
+    void trimHistoryMarkers();
 
 private:
     State m_state{State::Idle};
@@ -80,4 +92,13 @@ private:
 
     QPointer<MachineBackend> m_backend{nullptr};
     QPointer<LogInterface> m_logInterface{nullptr};
+
+    QVariantList m_temperatureHistory;
+    QVariantList m_pressureHistory;
+    QVariantList m_speedHistory;
+    QVariantList m_historyMarkers;
+    int m_nextSampleIndex{0};
+    int m_historyStartSampleIndex{0};
+    int m_lastSampleIndex{-1};
+    static constexpr int kHistoryCapacity = 60;
 };
