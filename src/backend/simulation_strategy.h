@@ -38,10 +38,6 @@ public:
     void advance(TelemetryFrame &telemetry, const Settings::Snapshot &settings) override;
 
 private:
-    double secondsPerTick(const Settings::Snapshot &settings);
-    int stepTowards(int current, int target, int step);
-
-private:
     int m_ticks{0};
 };
 
