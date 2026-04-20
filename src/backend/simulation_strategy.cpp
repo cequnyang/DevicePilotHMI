@@ -56,6 +56,24 @@ void OverloadStrategy::reset()
     m_ticks = 0;
 }
 
+namespace {
+double secondsPerTick(const Settings::Snapshot &settings)
+{
+    return std::max(0.001, settings.updateIntervalMs / 1000.0);
+}
+
+int stepTowards(int current, int target, int step)
+{
+    if (current < target) {
+        return std::min(target, current + step);
+    }
+    if (current > target) {
+        return std::max(target, current - step);
+    }
+    return current;
+}
+}; // namespace
+
 void OverloadStrategy::advance(TelemetryFrame &telemetry, const Settings::Snapshot &settings)
 {
     ++m_ticks;
@@ -71,22 +89,6 @@ void OverloadStrategy::advance(TelemetryFrame &telemetry, const Settings::Snapsh
     telemetry.speed = stepTowards(telemetry.speed, targetSpeed, speedStep);
     telemetry.temperature += (1.4 + 0.8 * loadRamp + 0.5 * speedRatio + 0.5 * heatSoak) * dt;
     telemetry.pressure += (0.9 + 0.7 * loadRamp + 0.4 * speedRatio + 0.3 * heatSoak) * dt;
-}
-
-double OverloadStrategy::secondsPerTick(const Settings::Snapshot &settings)
-{
-    return std::max(0.001, settings.updateIntervalMs / 1000.0);
-}
-
-int OverloadStrategy::stepTowards(int current, int target, int step)
-{
-    if (current < target) {
-        return std::min(target, current + step);
-    }
-    if (current > target) {
-        return std::max(target, current - step);
-    }
-    return current;
 }
 
 // CoolingFailureStrategy
