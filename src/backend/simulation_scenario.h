@@ -4,10 +4,9 @@
 
 namespace Simulation {
 Q_NAMESPACE
-enum class Scenario { NormalRamp, Overload, CoolingFailure, Unknown };
+enum class Scenario { NormalRamp, Overload, CoolingFailure, LoadStepResponse, Unknown };
 
 QString stateToString(Scenario state);
-Scenario stringToState(QString string);
 
 Q_ENUM_NS(Scenario)
 } // namespace Simulation

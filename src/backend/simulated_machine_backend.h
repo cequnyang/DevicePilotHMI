@@ -22,7 +22,7 @@ public:
     void requestResetFault() override;
     void requestSafeShutdown() override;
 
-    Simulation::Scenario currentScenario() const;
+    Simulation::Scenario scenario() const;
     void setScenario(Simulation::Scenario scenario);
 
 signals:

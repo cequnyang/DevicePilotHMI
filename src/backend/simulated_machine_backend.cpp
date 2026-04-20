@@ -80,7 +80,7 @@ void SimulatedMachineBackend::requestSafeShutdown()
     setState(MachineState::Fault);
 }
 
-Simulation::Scenario SimulatedMachineBackend::currentScenario() const
+Simulation::Scenario SimulatedMachineBackend::scenario() const
 {
     return m_scenario;
 }

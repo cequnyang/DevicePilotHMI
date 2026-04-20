@@ -11,9 +11,9 @@ SimulationControl::SimulationControl(SimulatedMachineBackend &backend, QObject *
     connect(m_backend, &SimulatedMachineBackend::scenarioChanged, this, &SimulationControl::scenarioChanged);
 }
 
-Simulation::Scenario SimulationControl::currentScenario() const
+Simulation::Scenario SimulationControl::scenario() const
 {
-    return m_backend->currentScenario();
+    return m_backend->scenario();
 }
 
 void SimulationControl::setScenario(Simulation::Scenario scenario)
@@ -21,7 +21,7 @@ void SimulationControl::setScenario(Simulation::Scenario scenario)
     m_backend->setScenario(scenario);
 }
 
-QString SimulationControl::currentScenarioName() const
+QString SimulationControl::scenarioName() const
 {
-    return Simulation::stateToString(m_backend->currentScenario());
+    return Simulation::stateToString(m_backend->scenario());
 }

@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import DevicePilotHMI
 
 import "../components" as Components
 
@@ -79,8 +78,10 @@ ScrollView {
                         samples: root.runtime.temperatureHistory
                         markers: root.runtime.historyMarkers
                         historyStartSampleIndex: root.runtime.historyStartSampleIndex
-                        minValue: 20
-                        maxValue: 120
+                        autoScale: true
+                        minimumAutoRange: 10
+                        valueDecimals: 1
+                        valueSuffix: "°C"
                         lineColor: "#f97316"
                     }
                 }
@@ -110,8 +111,10 @@ ScrollView {
                         samples: root.runtime.pressureHistory
                         markers: root.runtime.historyMarkers
                         historyStartSampleIndex: root.runtime.historyStartSampleIndex
-                        minValue: 70
-                        maxValue: 160
+                        autoScale: true
+                        minimumAutoRange: 10
+                        valueDecimals: 2
+                        valueSuffix: "bar"
                         lineColor: "#38bdf8"
                     }
                 }
@@ -141,8 +144,10 @@ ScrollView {
                         samples: root.runtime.speedHistory
                         markers: root.runtime.historyMarkers
                         historyStartSampleIndex: root.runtime.historyStartSampleIndex
-                        minValue: 0
-                        maxValue: 3600
+                        autoScale: true
+                        minimumAutoRange: 200
+                        valueDecimals: 0
+                        valueSuffix: "rpm"
                         lineColor: "#22c55e"
                     }
                 }
