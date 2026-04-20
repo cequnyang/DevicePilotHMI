@@ -27,6 +27,10 @@ SettingsSession::SettingsSession(LogInterface &logInterface,
             &SettingsApplyService::policyContextChanged,
             this,
             &SettingsSession::applyStateChanged);
+    connect(m_manager, &SettingsManager::thresholdsChanged, this, [this]() {
+        emit committedSettingsChanged();
+        emit applyStateChanged();
+    });
     reload();
 }
 
@@ -47,6 +51,26 @@ QString SettingsSession::applyRestrictionReason() const
     }
 
     return m_applyService->settingsApplyRestrictionReason(snapshotFromDraft());
+}
+
+int SettingsSession::committedWarningTemperature() const
+{
+    return m_manager->snapshot().warningTemperature;
+}
+
+int SettingsSession::committedFaultTemperature() const
+{
+    return m_manager->snapshot().faultTemperature;
+}
+
+int SettingsSession::committedWarningPressure() const
+{
+    return m_manager->snapshot().warningPressure;
+}
+
+int SettingsSession::committedFaultPressure() const
+{
+    return m_manager->snapshot().faultPressure;
 }
 
 bool SettingsSession::apply()

@@ -24,10 +24,12 @@ public:
     Q_PROPERTY(QString alarmText READ alarmText NOTIFY alarmChanged)
     Q_PROPERTY(bool hasWarning READ hasWarning NOTIFY alarmChanged)
     Q_PROPERTY(bool isFault READ isFault NOTIFY alarmChanged)
+    Q_PROPERTY(QString activeMetric READ activeMetric NOTIFY alarmChanged)
 
     QString alarmText() const;
     bool hasWarning() const;
     bool isFault() const;
+    QString activeMetric() const;
 
 signals:
     void alarmChanged();
@@ -38,13 +40,14 @@ signals:
 private:
     enum class AlarmLevel { Normal, Warning, Fault };
     void evaluateAlarm();
-    void enterFault(const QString &reason);
+    void enterFault(const QString &reason, const QString &metric);
 
     void appendLog(const QString &level, const QString &message);
 
 private:
     AlarmLevel m_alarmLevel{AlarmLevel::Normal};
     QString m_alarmText{"System normal"};
+    QString m_activeMetric;
 
     QPointer<LogInterface> m_logInterface{nullptr};
     QPointer<SettingsManager> m_settings{nullptr};

@@ -27,6 +27,7 @@ AlarmManager::AlarmManager(LogInterface &logInterface,
         const bool hadActiveAlarm = m_alarmLevel != AlarmLevel::Normal;
         m_alarmLevel = AlarmLevel::Normal;
         m_alarmText = "System normal";
+        m_activeMetric.clear();
         emit alarmChanged();
         if (hadActiveAlarm) {
             emit alarmCleared();
@@ -63,6 +64,11 @@ bool AlarmManager::isFault() const
     return m_alarmLevel == AlarmLevel::Fault;
 }
 
+QString AlarmManager::activeMetric() const
+{
+    return m_activeMetric;
+}
+
 void AlarmManager::evaluateAlarm()
 {
     if (isFault()) {
@@ -72,27 +78,30 @@ void AlarmManager::evaluateAlarm()
     const Snapshot &snapShot = m_settings->snapshot();
     const auto temperature = m_runtime->temperature();
     if (temperature >= snapShot.faultTemperature) {
-        enterFault("Temperature exceeded fault threshold");
+        enterFault("Temperature exceeded fault threshold", "temperature");
         return;
     }
 
     const auto pressure = m_runtime->pressure();
     if (pressure >= snapShot.faultPressure) {
-        enterFault("Pressure exceeded fault threshold");
+        enterFault("Pressure exceeded fault threshold", "pressure");
         return;
     }
 
     AlarmLevel newLevel = AlarmLevel::Normal;
     QString newAlarmText = "System normal";
+    QString newActiveMetric;
     if (temperature >= snapShot.warningTemperature) {
         newLevel = AlarmLevel::Warning;
         newAlarmText = "Temperature exceeded warning threshold";
+        newActiveMetric = "temperature";
     } else if (pressure >= snapShot.warningPressure) {
         newLevel = AlarmLevel::Warning;
         newAlarmText = "Pressure exceeded warning threshold";
+        newActiveMetric = "pressure";
     }
 
-    if (m_alarmLevel != newLevel || m_alarmText != newAlarmText) {
+    if (m_alarmLevel != newLevel || m_alarmText != newAlarmText || m_activeMetric != newActiveMetric) {
         if (newLevel == AlarmLevel::Warning && m_alarmLevel != AlarmLevel::Warning) {
             appendLog("WARNING", newAlarmText);
             emit warningEntered(newAlarmText);
@@ -102,11 +111,12 @@ void AlarmManager::evaluateAlarm()
 
         m_alarmLevel = newLevel;
         m_alarmText = newAlarmText;
+        m_activeMetric = newActiveMetric;
         emit alarmChanged();
     }
 }
 
-void AlarmManager::enterFault(const QString &reason)
+void AlarmManager::enterFault(const QString &reason, const QString &metric)
 {
     if (isFault()) {
         return;
@@ -114,6 +124,7 @@ void AlarmManager::enterFault(const QString &reason)
 
     m_alarmLevel = AlarmLevel::Fault;
     m_alarmText = reason;
+    m_activeMetric = metric;
     m_runtime->enterFault();
     emit alarmChanged();
     emit faultEntered(reason);

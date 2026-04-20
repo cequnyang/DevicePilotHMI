@@ -20,6 +20,14 @@ class SettingsSession : public QObject
     Q_PROPERTY(SettingsDraft *draft READ draft CONSTANT)
     Q_PROPERTY(bool applyEnabled READ applyEnabled NOTIFY applyStateChanged)
     Q_PROPERTY(QString applyRestrictionReason READ applyRestrictionReason NOTIFY applyStateChanged)
+    Q_PROPERTY(int committedWarningTemperature READ committedWarningTemperature NOTIFY
+                   committedSettingsChanged)
+    Q_PROPERTY(int committedFaultTemperature READ committedFaultTemperature NOTIFY
+                   committedSettingsChanged)
+    Q_PROPERTY(int committedWarningPressure READ committedWarningPressure NOTIFY
+                   committedSettingsChanged)
+    Q_PROPERTY(int committedFaultPressure READ committedFaultPressure NOTIFY
+                   committedSettingsChanged)
 
 public:
     explicit SettingsSession(LogInterface &logInterface,
@@ -30,12 +38,17 @@ public:
     SettingsDraft *draft() const;
     bool applyEnabled() const;
     QString applyRestrictionReason() const;
+    int committedWarningTemperature() const;
+    int committedFaultTemperature() const;
+    int committedWarningPressure() const;
+    int committedFaultPressure() const;
 
     Q_INVOKABLE bool apply();
     Q_INVOKABLE void reload();
 
 signals:
     void applyStateChanged();
+    void committedSettingsChanged();
 
 private:
     const Snapshot &snapshotFromDraft() const;

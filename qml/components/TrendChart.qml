@@ -20,6 +20,8 @@ Item {
     property color hoverLabelBackgroundColor: "#0f172a"
     property color hoverLabelBorderColor: "#334155"
     property color hoverLabelTextColor: "#f8fafc"
+    property color thresholdLabelBackgroundColor: "#0f172a"
+    property color thresholdLabelTextColor: "#e2e8f0"
     property bool hoverPointerActive: false
     property real hoverPointerX: -1
     property int hoveredSampleIndex: -1
@@ -27,6 +29,9 @@ Item {
     // marker example:
     // { sampleIndex: 12, kind: "warning", label: "Warning", color: "#f59e0b" }
     property var markers: []
+    // threshold example:
+    // { value: 95, label: "Warn", color: "#f59e0b" }
+    property var thresholds: []
     property int historyStartSampleIndex: 0
 
     readonly property int sampleCount: root.samples ? root.samples.length : 0
@@ -38,21 +43,14 @@ Item {
     readonly property string hoveredValueText: root.hoverActive
         ? root.formatValue(root.hoveredValue)
         : ""
+    readonly property var dataBounds: root.resolveDataBounds()
     readonly property real effectiveMinValue: {
         let result = root.minValue
-        if (!root.autoScale || !root.samples || root.samples.length === 0)
+        if (!root.autoScale || (root.sampleCount === 0 && (!root.thresholds || root.thresholds.length === 0)))
             return result
 
-        let sampleMin = Infinity
-        let sampleMax = -Infinity
-        for (let i = 0; i < root.samples.length; ++i) {
-            const numericValue = Number(root.samples[i])
-            if (!isFinite(numericValue))
-                continue
-            sampleMin = Math.min(sampleMin, numericValue)
-            sampleMax = Math.max(sampleMax, numericValue)
-        }
-
+        const sampleMin = root.dataBounds.min
+        const sampleMax = root.dataBounds.max
         if (sampleMin === Infinity || sampleMax === -Infinity)
             return result
 
@@ -64,19 +62,11 @@ Item {
     }
     readonly property real effectiveMaxValue: {
         let result = root.maxValue
-        if (!root.autoScale || !root.samples || root.samples.length === 0)
+        if (!root.autoScale || (root.sampleCount === 0 && (!root.thresholds || root.thresholds.length === 0)))
             return result
 
-        let sampleMin = Infinity
-        let sampleMax = -Infinity
-        for (let i = 0; i < root.samples.length; ++i) {
-            const numericValue = Number(root.samples[i])
-            if (!isFinite(numericValue))
-                continue
-            sampleMin = Math.min(sampleMin, numericValue)
-            sampleMax = Math.max(sampleMax, numericValue)
-        }
-
+        const sampleMin = root.dataBounds.min
+        const sampleMax = root.dataBounds.max
         if (sampleMin === Infinity || sampleMax === -Infinity)
             return result
 
@@ -112,6 +102,36 @@ Item {
 
         const ratio = root.clamp(x / Math.max(1, widthValue - 1), 0, 1)
         return Math.round(ratio * (root.sampleCount - 1))
+    }
+
+    function resolveDataBounds() {
+        let sampleMin = Infinity
+        let sampleMax = -Infinity
+
+        if (root.samples) {
+            for (let i = 0; i < root.samples.length; ++i) {
+                const numericValue = Number(root.samples[i])
+                if (!isFinite(numericValue))
+                    continue
+                sampleMin = Math.min(sampleMin, numericValue)
+                sampleMax = Math.max(sampleMax, numericValue)
+            }
+        }
+
+        if (root.thresholds) {
+            for (let i = 0; i < root.thresholds.length; ++i) {
+                const threshold = root.thresholds[i]
+                if (!threshold || threshold.value === undefined)
+                    continue
+                const numericValue = Number(threshold.value)
+                if (!isFinite(numericValue))
+                    continue
+                sampleMin = Math.min(sampleMin, numericValue)
+                sampleMax = Math.max(sampleMax, numericValue)
+            }
+        }
+
+        return { min: sampleMin, max: sampleMax }
     }
 
     function formatValue(value) {
@@ -150,6 +170,11 @@ Item {
             // background grid
             ctx.strokeStyle = root.gridColor
             ctx.lineWidth = 1
+            const occupiedLabelBoxes = []
+
+            function boxesIntersect(ax, ay, aw, ah, bx, by, bw, bh) {
+                return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by
+            }
 
             for (let i = 0; i <= 3; ++i) {
                 const y = i * (h - 1) / 3
@@ -157,6 +182,61 @@ Item {
                 ctx.moveTo(0, y)
                 ctx.lineTo(w, y)
                 ctx.stroke()
+            }
+
+            // threshold lines + top-right limit legend
+            if (root.thresholds && root.thresholds.length > 0) {
+                for (let i = 0; i < root.thresholds.length; ++i) {
+                    const threshold = root.thresholds[i]
+                    if (!threshold || threshold.value === undefined)
+                        continue
+
+                    const numericValue = Number(threshold.value)
+                    if (!isFinite(numericValue))
+                        continue
+
+                    const y = root.sampleY(numericValue, h)
+                    const thresholdColor = threshold.color || "#94a3b8"
+                    const labelPrefix = threshold.label ? threshold.label + " " : ""
+                    const labelText = labelPrefix + root.formatValue(numericValue)
+
+                    if (ctx.setLineDash)
+                        ctx.setLineDash([6, 4])
+                    ctx.strokeStyle = thresholdColor
+                    ctx.lineWidth = 1
+                    ctx.beginPath()
+                    ctx.moveTo(0, y)
+                    ctx.lineTo(w, y)
+                    ctx.stroke()
+                    if (ctx.setLineDash)
+                        ctx.setLineDash([])
+
+                    ctx.font = "11px sans-serif"
+                    const textWidth = ctx.measureText(labelText).width
+                    const boxWidth = textWidth + 12
+                    const boxHeight = 16
+                    const boxX = root.clamp(w - boxWidth - 4, 0, w - boxWidth)
+                    const boxY = 2 + (i * (boxHeight + 6))
+
+                    ctx.fillStyle = root.thresholdLabelBackgroundColor
+                    ctx.fillRect(boxX, boxY, boxWidth, boxHeight)
+
+                    ctx.strokeStyle = thresholdColor
+                    ctx.strokeRect(boxX, boxY, boxWidth, boxHeight)
+
+                    ctx.fillStyle = thresholdColor
+                    ctx.fillRect(boxX + 4, boxY + 4, 4, boxHeight - 8)
+
+                    ctx.fillStyle = root.thresholdLabelTextColor
+                    ctx.fillText(labelText, boxX + 12, boxY + 12)
+
+                    occupiedLabelBoxes.push({
+                        x: boxX,
+                        y: boxY,
+                        width: boxWidth,
+                        height: boxHeight
+                    })
+                }
             }
 
             // event markers
@@ -187,7 +267,33 @@ Item {
                         const boxWidth = textWidth + 8
                         const boxHeight = 16
                         const boxX = root.clamp(x + 4, 0, w - boxWidth)
-                        const boxY = 2
+                        const candidateYs = [2, 24, 46]
+                        let boxY = candidateYs[candidateYs.length - 1]
+
+                        for (let candidateIndex = 0; candidateIndex < candidateYs.length; ++candidateIndex) {
+                            const candidateY = root.clamp(candidateYs[candidateIndex], 2, h - boxHeight - 2)
+                            let collides = false
+
+                            for (let occupiedIndex = 0; occupiedIndex < occupiedLabelBoxes.length; ++occupiedIndex) {
+                                const occupied = occupiedLabelBoxes[occupiedIndex]
+                                if (boxesIntersect(boxX,
+                                                   candidateY,
+                                                   boxWidth,
+                                                   boxHeight,
+                                                   occupied.x,
+                                                   occupied.y,
+                                                   occupied.width,
+                                                   occupied.height)) {
+                                    collides = true
+                                    break
+                                }
+                            }
+
+                            if (!collides) {
+                                boxY = candidateY
+                                break
+                            }
+                        }
 
                         ctx.fillStyle = "#0f172a"
                         ctx.fillRect(boxX, boxY, boxWidth, boxHeight)
@@ -197,6 +303,13 @@ Item {
 
                         ctx.fillStyle = root.labelColor
                         ctx.fillText(label, boxX + 4, boxY + 12)
+
+                        occupiedLabelBoxes.push({
+                            x: boxX,
+                            y: boxY,
+                            width: boxWidth,
+                            height: boxHeight
+                        })
                     }
                 }
             }
@@ -309,6 +422,7 @@ Item {
         canvas.requestPaint()
     }
     onMarkersChanged: canvas.requestPaint()
+    onThresholdsChanged: canvas.requestPaint()
     onHistoryStartSampleIndexChanged: canvas.requestPaint()
     onMinValueChanged: canvas.requestPaint()
     onMaxValueChanged: canvas.requestPaint()
@@ -318,6 +432,8 @@ Item {
     onHoveredSampleIndexChanged: canvas.requestPaint()
     onLineColorChanged: canvas.requestPaint()
     onGridColorChanged: canvas.requestPaint()
+    onThresholdLabelBackgroundColorChanged: canvas.requestPaint()
+    onThresholdLabelTextColorChanged: canvas.requestPaint()
     onWidthChanged: {
         root.updateHoveredSampleIndex()
         canvas.requestPaint()
