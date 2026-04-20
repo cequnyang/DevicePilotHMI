@@ -161,10 +161,6 @@ void MachineRuntime::onTelemetryReceived(TelemetryFrame frame)
         telemetryChanged = true;
     }
 
-    if (telemetryChanged && m_state == State::Running) {
-        emit evaluateAlarm();
-    }
-
     m_lastSampleIndex = m_nextSampleIndex++;
     appendSample(m_temperatureHistory, frame.temperature, kHistoryCapacity);
     appendSample(m_pressureHistory, frame.pressure, kHistoryCapacity);
@@ -174,6 +170,9 @@ void MachineRuntime::onTelemetryReceived(TelemetryFrame frame)
     m_historyStartSampleIndex = std::max(0, m_nextSampleIndex - historySize);
     trimHistoryMarkers();
 
+    if (telemetryChanged && m_state == State::Running) {
+        emit evaluateAlarm();
+    }
     emit historyChanged();
 }
 
