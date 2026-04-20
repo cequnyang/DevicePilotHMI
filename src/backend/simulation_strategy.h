@@ -53,3 +53,20 @@ private:
     int m_ticks{0};
     bool m_failureActive{false};
 };
+
+class LoadStepResponseStrategy final : public SimulationStrategy
+{
+public:
+    Simulation::Scenario scenario() const override;
+    int startupSpeed(const Settings::Snapshot &) const override;
+    void reset() override;
+    void advance(TelemetryFrame &telemetry, const Settings::Snapshot &settings) override;
+
+private:
+    void updatePhase();
+
+private:
+    enum class Phase { Warmup, LoadStep, ControlRecovery, LoadRelief };
+    int m_ticks{0};
+    Phase m_phase{Phase::Warmup};
+};

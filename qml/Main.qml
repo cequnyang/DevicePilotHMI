@@ -24,7 +24,8 @@ ApplicationWindow {
     property var scenarioOptions: [
         { label: "Normal Ramp", scenario: SimulationScenario.NormalRamp },
         { label: "Overload", scenario: SimulationScenario.Overload },
-        { label: "Cooling Failure", scenario: SimulationScenario.CoolingFailure }
+        { label: "Cooling Failure", scenario: SimulationScenario.CoolingFailure },
+        { label: "Load Step Response", scenario: SimulationScenario.LoadStepResponse }
     ]
 
     function scenarioIndexFor(value) {

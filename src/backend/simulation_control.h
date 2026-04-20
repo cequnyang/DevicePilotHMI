@@ -15,16 +15,15 @@ class SimulationControl : public QObject
     QML_ELEMENT
     QML_UNCREATABLE("SimulationControl is created in C++ and injected into the root QML object.")
 
-    Q_PROPERTY(
-        Simulation::Scenario scenario READ currentScenario WRITE setScenario NOTIFY scenarioChanged)
-    Q_PROPERTY(QString scenarioName READ currentScenarioName NOTIFY scenarioChanged)
+    Q_PROPERTY(Simulation::Scenario scenario READ scenario WRITE setScenario NOTIFY scenarioChanged)
+    Q_PROPERTY(QString scenarioName READ scenarioName NOTIFY scenarioChanged)
 
 public:
     explicit SimulationControl(SimulatedMachineBackend &backend, QObject *parent = nullptr);
 
-    Simulation::Scenario currentScenario() const;
+    Simulation::Scenario scenario() const;
     void setScenario(Simulation::Scenario scenario);
-    QString currentScenarioName() const;
+    QString scenarioName() const;
 
 signals:
     void scenarioChanged();
