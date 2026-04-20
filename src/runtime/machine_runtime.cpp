@@ -1,6 +1,10 @@
 #include "runtime/machine_runtime.h"
 
 #include <QMetaType>
+#include <algorithm>
+#include <chrono>
+#include <format>
+#include <string>
 
 #include "backend/machine_backend.h"
 #include "log/log_interface.h"
@@ -18,10 +22,15 @@ MachineRuntime::MachineRuntime(LogInterface &logInterface,
     Q_ASSERT(m_backend);
     Q_ASSERT(m_logInterface);
 
+    m_stateContextTimer.setInterval(1000);
+    connect(&m_stateContextTimer, &QTimer::timeout, this, [this]() { emit stateContextChanged(); });
+    m_stateContextTimer.start();
+
     connect(m_backend,
             &MachineBackend::telemetryReceived,
             this,
             &MachineRuntime::onTelemetryReceived);
+
     connect(m_backend, &MachineBackend::stateReported, this, &MachineRuntime::onStateReported);
 }
 
@@ -60,6 +69,56 @@ bool MachineRuntime::canResetFault() const
     return m_state == State::Fault;
 }
 
+QString MachineRuntime::startDisabledReason() const
+{
+    if (canStart()) {
+        return "";
+    }
+
+    switch (m_state) {
+    case State::Starting:
+        return "Start request already in progress.";
+    case State::Running:
+        return "Machine is already running.";
+    case State::Stopping:
+        return "Start is available again after the machine returns to Idle.";
+    case State::Fault:
+        return "Start unavailable while a fault is active.";
+    case State::Idle:
+        return "";
+    }
+    return "";
+}
+
+QString MachineRuntime::stopDisabledReason() const
+{
+    if (canStop()) {
+        return "";
+    }
+
+    switch (m_state) {
+    case State::Idle:
+        return "Stop is available only during Starting or Running.";
+    case State::Stopping:
+        return "Stop request already in progress.";
+    case State::Fault:
+        return "Stop unavailable while the machine is in Fault.";
+    case State::Starting:
+    case State::Running:
+        return "";
+    }
+    return "";
+}
+
+QString MachineRuntime::resetDisabledReason() const
+{
+    if (canResetFault()) {
+        return "";
+    }
+
+    return "Reset Fault is available only in Fault state.";
+}
+
 QVariantList MachineRuntime::temperatureHistory() const
 {
     return m_temperatureHistory;
@@ -83,6 +142,45 @@ QVariantList MachineRuntime::historyMarkers() const
 int MachineRuntime::historyStartSampleIndex() const
 {
     return m_historyStartSampleIndex;
+}
+
+namespace {
+std::string formatDuration(long long totalSeconds)
+{
+    auto hms = std::chrono::hh_mm_ss{std::chrono::seconds{totalSeconds}};
+    return std::format("{}h {}m {}s",
+                       hms.hours().count(),
+                       hms.minutes().count(),
+                       hms.seconds().count());
+}
+} // namespace
+
+QString MachineRuntime::currentStateDurationText() const
+{
+    return QString::fromStdString(formatDuration(currentStateDurationSeconds()));
+}
+
+qint64 MachineRuntime::currentStateDurationSeconds() const
+{
+    if (!m_stateEnteredAt.isValid()) {
+        return 0;
+    }
+
+    return std::max<qint64>(0, m_stateEnteredAt.secsTo(QDateTime::currentDateTime()));
+}
+
+QDateTime MachineRuntime::lastTransitionTime() const
+{
+    return m_lastTransitionTime;
+}
+
+QString MachineRuntime::lastTransitionTimeText() const
+{
+    if (!m_lastTransitionTime.isValid()) {
+        return "Not observed yet";
+    }
+
+    return m_lastTransitionTime.toString("yyyy-MM-dd hh:mm:ss");
 }
 
 MachineRuntime::State MachineRuntime::state() const
@@ -194,8 +292,11 @@ void MachineRuntime::onStateReported(MachineState state)
 
     const State previousState = m_state;
     m_state = state;
+    markStateTransition(QDateTime::currentDateTime());
+
     emit statusChanged();
     emit stateChanged();
+    emit stateContextChanged();
 
     if (m_state == State::Fault) {
         m_faultResetPending = false;
@@ -231,8 +332,11 @@ void MachineRuntime::enterFault()
 
     m_state = State::Fault;
     m_faultResetPending = false;
+    markStateTransition(QDateTime::currentDateTime());
+
     emit statusChanged();
     emit stateChanged();
+    emit stateContextChanged();
 
     if (m_speed != RuntimeInit::kSpeed) {
         m_speed = RuntimeInit::kSpeed;
@@ -240,6 +344,11 @@ void MachineRuntime::enterFault()
     }
 
     m_backend->requestSafeShutdown();
+}
+
+void MachineRuntime::appendLog(const QString &level, const QString &message)
+{
+    m_logInterface->appendLog(level, message);
 }
 
 QString MachineRuntime::stateToString(State state) const
@@ -259,9 +368,21 @@ QString MachineRuntime::stateToString(State state) const
     return "Unknown";
 }
 
-void MachineRuntime::appendLog(const QString &level, const QString &message)
+void MachineRuntime::trimHistoryMarkers()
 {
-    m_logInterface->appendLog(level, message);
+    while (!m_historyMarkers.isEmpty()) {
+        const int sampleIndex = markerSampleIndex(m_historyMarkers.first());
+        if (sampleIndex >= m_historyStartSampleIndex) {
+            break;
+        }
+        m_historyMarkers.removeFirst();
+    }
+}
+
+void MachineRuntime::markStateTransition(const QDateTime &timestamp)
+{
+    m_stateEnteredAt = timestamp;
+    m_lastTransitionTime = timestamp;
 }
 
 void MachineRuntime::recordHistoryMarker(const QString &kind,
@@ -277,15 +398,4 @@ void MachineRuntime::recordHistoryMarker(const QString &kind,
     m_historyMarkers.append(marker);
     trimHistoryMarkers();
     emit historyChanged();
-}
-
-void MachineRuntime::trimHistoryMarkers()
-{
-    while (!m_historyMarkers.isEmpty()) {
-        const int sampleIndex = markerSampleIndex(m_historyMarkers.first());
-        if (sampleIndex >= m_historyStartSampleIndex) {
-            break;
-        }
-        m_historyMarkers.removeFirst();
-    }
 }

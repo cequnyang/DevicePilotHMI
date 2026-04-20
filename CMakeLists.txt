@@ -103,6 +103,7 @@ qt_add_qml_module(DevicePilotHMI
         qml/components/StatusBanner.qml
         qml/components/MetricCard.qml
         qml/components/ControlPanel.qml
+        qml/components/StateContextCard.qml
         qml/components/TrendChart.qml
 )
 
