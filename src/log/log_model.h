@@ -5,6 +5,8 @@
 #include <QVector>
 #include <qqmlintegration.h>
 
+#include "log/log_event.h"
+
 class LogModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -14,7 +16,14 @@ class LogModel : public QAbstractListModel
 public:
     explicit LogModel(QObject *parent = nullptr);
 
-    enum Roles { TimestampRole = Qt::UserRole + 1, LevelRole, MessageRole, AcknowledgedRole };
+    enum Roles {
+        TimestampRole = Qt::UserRole + 1,
+        LevelRole,
+        SourceRole,
+        EventTypeRole,
+        MessageRole,
+        AcknowledgedRole
+    };
     Q_ENUM(Roles)
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -28,13 +37,15 @@ public:
 
 private:
     friend class LogInterface;
-    void addLog(const QString &level, const QString &message);
+    void addLog(const LogEvent &event);
 
 private:
     struct Entry
     {
         QString timestamp;
         QString level;
+        QString source;
+        QString eventType;
         QString message;
         bool acknowledged{false};
     };

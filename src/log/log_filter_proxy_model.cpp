@@ -6,6 +6,7 @@ LogFilterProxyModel::LogFilterProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent)
 {
     setDynamicSortFilter(true);
+    sort(0, Qt::DescendingOrder);
 }
 
 LogModel *LogFilterProxyModel::sourceLogModel() const
@@ -20,6 +21,7 @@ void LogFilterProxyModel::setSourceLogModel(LogModel *model)
 
     m_sourceLogModel = model;
     setSourceModel(model);
+    sort(0, m_newestFirst ? Qt::DescendingOrder : Qt::AscendingOrder);
 
     emit sourceLogModelChanged();
     beginFilterChange();
@@ -77,6 +79,21 @@ void LogFilterProxyModel::setShowOnlyUnacknowledged(bool value)
     endFilterChange(QSortFilterProxyModel::Direction::Rows);
 }
 
+bool LogFilterProxyModel::newestFirst() const
+{
+    return m_newestFirst;
+}
+
+void LogFilterProxyModel::setNewestFirst(bool value)
+{
+    if (m_newestFirst == value)
+        return;
+
+    m_newestFirst = value;
+    sort(0, m_newestFirst ? Qt::DescendingOrder : Qt::AscendingOrder);
+    emit newestFirstChanged();
+}
+
 void LogFilterProxyModel::setAcknowledged(int proxyRow, bool acknowledged)
 {
     if (!m_sourceLogModel)
@@ -101,6 +118,8 @@ bool LogFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
     const QModelIndex idx = m_sourceLogModel->index(sourceRow, 0, sourceParent);
 
     const QString level = m_sourceLogModel->data(idx, LogModel::LevelRole).toString();
+    const QString source = m_sourceLogModel->data(idx, LogModel::SourceRole).toString();
+    const QString eventType = m_sourceLogModel->data(idx, LogModel::EventTypeRole).toString();
     const QString timestamp = m_sourceLogModel->data(idx, LogModel::TimestampRole).toString();
     const QString message = m_sourceLogModel->data(idx, LogModel::MessageRole).toString();
     const bool acknowledged = m_sourceLogModel->data(idx, LogModel::AcknowledgedRole).toBool();
@@ -109,10 +128,17 @@ bool LogFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
 
     const QString query = m_searchText.trimmed();
     const bool textMatch = query.isEmpty() || level.contains(query, Qt::CaseInsensitive)
+                           || source.contains(query, Qt::CaseInsensitive)
+                           || eventType.contains(query, Qt::CaseInsensitive)
                            || timestamp.contains(query, Qt::CaseInsensitive)
                            || message.contains(query, Qt::CaseInsensitive);
 
     const bool ackMatch = !m_showOnlyUnacknowledged || !acknowledged;
 
     return levelMatch && textMatch && ackMatch;
+}
+
+bool LogFilterProxyModel::lessThan(const QModelIndex &sourceLeft, const QModelIndex &sourceRight) const
+{
+    return sourceLeft.row() < sourceRight.row();
 }

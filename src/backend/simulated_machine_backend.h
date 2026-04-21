@@ -8,6 +8,8 @@
 #include "backend/simulation_scenario.h"
 #include "backend/simulation_strategy.h"
 
+class LogEvent;
+class LogInterface;
 class SettingsManager;
 
 class SimulatedMachineBackend : public MachineBackend
@@ -15,7 +17,9 @@ class SimulatedMachineBackend : public MachineBackend
     Q_OBJECT
 
 public:
-    explicit SimulatedMachineBackend(SettingsManager &settings, QObject *parent = nullptr);
+    explicit SimulatedMachineBackend(LogInterface &logInterface,
+                                     SettingsManager &settings,
+                                     QObject *parent = nullptr);
 
     void requestStart() override;
     void requestStop() override;
@@ -38,8 +42,10 @@ private:
     void setState(MachineState newState);
     void publishTelemetry();
     void resetTelemetryToIdle();
+    void appendLog(const LogEvent &event);
 
 private:
+    QPointer<LogInterface> m_logInterface{nullptr};
     QPointer<SettingsManager> m_settings{nullptr};
     MachineState m_state{MachineState::Idle};
     PendingTransition m_pendingTransition{PendingTransition::None};

@@ -6,6 +6,7 @@
 #include <qqmlintegration.h>
 
 class LogInterface;
+class LogEvent;
 class SettingsManager;
 class MachineRuntime;
 
@@ -42,7 +43,7 @@ private:
     void evaluateAlarm();
     void enterFault(const QString &reason, const QString &metric);
 
-    void appendLog(const QString &level, const QString &message);
+    void appendLog(const LogEvent &event);
 
 private:
     AlarmLevel m_alarmLevel{AlarmLevel::Normal};

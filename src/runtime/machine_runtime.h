@@ -9,6 +9,7 @@
 #include <qqmlintegration.h>
 
 class MachineBackend;
+class LogEvent;
 class LogInterface;
 
 #include "runtime/machine_types.h"
@@ -100,7 +101,7 @@ public:
 
 private:
     QString stateToString(State state) const;
-    void appendLog(const QString &level, const QString &message);
+    void appendLog(const LogEvent &event);
     void trimHistoryMarkers();
     void markStateTransition(const QDateTime &timestamp);
 

@@ -1,5 +1,6 @@
 #include "settings/settings_apply_service.h"
 
+#include "log/log_event.h"
 #include "log/log_interface.h"
 #include "runtime/machine_runtime.h"
 #include "settings/settings_manager.h"
@@ -19,7 +20,12 @@ SettingsApplyService::SettingsApplyService(LogInterface &logInterface,
     Q_ASSERT(m_settings);
     Q_ASSERT(m_machineRuntime);
 
-    appendLog("INFO", "Settings Apply Service initialized");
+    appendLog(LogEvent{
+        .level = "INFO",
+        .source = "settings",
+        .eventType = "settings.initialize.succeeded",
+        .message = "Settings Apply Service initialized",
+    });
 
     connect(m_machineRuntime,
             &MachineRuntime::stateChanged,
@@ -31,16 +37,34 @@ bool SettingsApplyService::applySettings(const Snapshot &candidate)
 {
     const SettingsApplyAnalysis analysis = analyzeSettingsApply(candidate);
     if (!analysis.allowed) {
-        appendLog("CONFIG", QString("Rejected settings apply (%1)").arg(analysis.reason));
+        appendLog(LogEvent{
+            .level = "CONFIG",
+            .source = "settings",
+            .eventType = "settings.apply.rejected",
+            .message = QString("Rejected settings apply (%1)").arg(analysis.reason),
+        });
+
         return false;
     }
     const auto [apply, reason] = m_settings->applySnapshot(candidate);
     if (!apply) {
-        appendLog("CONFIG", QString("Rejected settings apply (%1)").arg(reason));
+        appendLog(LogEvent{
+            .level = "CONFIG",
+            .source = "settings",
+            .eventType = "settings.apply.rejected",
+            .message = QString("Rejected settings apply (%1)").arg(reason),
+        });
+
         return false;
     }
 
-    appendLog("CONFIG", "Settings applied");
+    appendLog(LogEvent{
+        .level = "CONFIG",
+        .source = "settings",
+        .eventType = "settings.apply.succeeded",
+        .message = "Settings applied",
+    });
+
     return true;
 }
 
@@ -114,7 +138,7 @@ SettingsApplyAnalysis SettingsApplyService::analyzeSettingsApply(const Snapshot 
     return result;
 }
 
-void SettingsApplyService::appendLog(const QString &level, const QString &message)
+void SettingsApplyService::appendLog(const LogEvent &event)
 {
-    m_logInterface->appendLog(level, message);
+    m_logInterface->appendLog(event);
 }

@@ -9,7 +9,7 @@ LogInterface::LogInterface(LogModel &logModel, QObject *parent)
     Q_ASSERT(m_logModel);
 }
 
-void LogInterface::appendLog(const QString &level, const QString &message)
+void LogInterface::appendLog(const LogEvent &event)
 {
-    m_logModel->addLog(level, message);
+    m_logModel->addLog(event);
 }

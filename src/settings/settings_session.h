@@ -8,6 +8,7 @@
 #include "settings/settings_draft.h"
 
 class LogInterface;
+class LogEvent;
 class SettingsApplyService;
 
 using Settings::Snapshot;
@@ -52,7 +53,7 @@ signals:
 
 private:
     const Snapshot &snapshotFromDraft() const;
-    void appendLog(const QString &level, const QString &message);
+    void appendLog(const LogEvent &event);
 
 private:
     QPointer<LogInterface> m_logInterface{nullptr};

@@ -26,7 +26,7 @@ if (MINGW)
     )
 endif()
 
-find_package(Qt6 QUIET COMPONENTS Quick Qml Test)
+find_package(Qt6 QUIET COMPONENTS Quick Qml QuickControls2 Test)
 
 if (NOT Qt6_FOUND)
     message(FATAL_ERROR
@@ -66,6 +66,7 @@ qt_add_qml_module(DevicePilotHMI
         src/backend/simulation_control.cpp
         src/backend/simulation_strategy.h
         src/backend/simulation_strategy.cpp
+        src/log/log_event.h
         src/log/log_model.h
         src/log/log_model.cpp
         src/log/log_filter_proxy_model.h
@@ -124,6 +125,7 @@ target_link_libraries(DevicePilotHMI
     PRIVATE
         Qt6::Quick
         Qt6::Qml
+        Qt6::QuickControls2
         project_options
         project_warnings
 )

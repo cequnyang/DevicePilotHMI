@@ -1,5 +1,6 @@
 #include "alarm/alarm_manager.h"
 
+#include "log/log_event.h"
 #include "log/log_interface.h"
 #include "runtime/machine_runtime.h"
 #include "settings/settings_manager.h"
@@ -46,6 +47,33 @@ AlarmManager::AlarmManager(LogInterface &logInterface,
 
     connect(this, &AlarmManager::alarmCleared, m_runtime, [this]() {
         m_runtime->recordHistoryMarker("clear", "Clear", "#cbd5e1");
+    });
+
+    connect(this, &AlarmManager::warningEntered, this, [this](const QString &text) {
+        appendLog(LogEvent{
+            .level = "WARNING",
+            .source = "alarm",
+            .eventType = "alarm.warning.entered",
+            .message = text,
+        });
+    });
+
+    connect(this, &AlarmManager::faultEntered, this, [this](const QString &text) {
+        appendLog(LogEvent{
+            .level = "FAULT",
+            .source = "alarm",
+            .eventType = "alarm.fault.entered",
+            .message = text,
+        });
+    });
+
+    connect(this, &AlarmManager::alarmCleared, this, [this]() {
+        appendLog(LogEvent{
+            .level = "INFO",
+            .source = "alarm",
+            .eventType = "alarm.cleared",
+            .message = "Alarm cleared",
+        });
     });
 }
 
@@ -103,7 +131,6 @@ void AlarmManager::evaluateAlarm()
 
     if (m_alarmLevel != newLevel || m_alarmText != newAlarmText || m_activeMetric != newActiveMetric) {
         if (newLevel == AlarmLevel::Warning && m_alarmLevel != AlarmLevel::Warning) {
-            appendLog("WARNING", newAlarmText);
             emit warningEntered(newAlarmText);
         } else if (newLevel == AlarmLevel::Normal && m_alarmLevel != AlarmLevel::Normal) {
             emit alarmCleared();
@@ -128,11 +155,9 @@ void AlarmManager::enterFault(const QString &reason, const QString &metric)
     m_runtime->enterFault();
     emit alarmChanged();
     emit faultEntered(reason);
-
-    appendLog("FAULT", reason);
 }
 
-void AlarmManager::appendLog(const QString &level, const QString &message)
+void AlarmManager::appendLog(const LogEvent &event)
 {
-    m_logInterface->appendLog(level, message);
+    m_logInterface->appendLog(event);
 }

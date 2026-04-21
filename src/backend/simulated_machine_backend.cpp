@@ -2,14 +2,20 @@
 
 #include <algorithm>
 
+#include "log/log_event.h"
+#include "log/log_interface.h"
 #include "settings/settings_manager.h"
 
-SimulatedMachineBackend::SimulatedMachineBackend(SettingsManager &settings, QObject *parent)
+SimulatedMachineBackend::SimulatedMachineBackend(LogInterface &logInterface,
+                                                 SettingsManager &settings,
+                                                 QObject *parent)
     : MachineBackend(parent)
+    , m_logInterface(&logInterface)
     , m_settings(&settings)
     , m_simulationStrategy(makeSimulationStrategy(m_scenario))
 
 {
+    Q_ASSERT(m_logInterface);
     Q_ASSERT(m_settings);
 
     m_updateTimer.setInterval(m_settings->updateIntervalMs());
@@ -94,8 +100,16 @@ void SimulatedMachineBackend::setScenario(Simulation::Scenario scenario)
     if (m_state != MachineState::Idle) {
         return;
     }
-
+    const auto previous = m_scenario;
     m_scenario = scenario;
+    m_logInterface->appendLog(LogEvent{
+        .level = "INFO",
+        .source = "runtime",
+        .eventType = "runtime.scenario.changed",
+        .message = QString("Scenario changed: %1 -> %2")
+                       .arg(Simulation::stateToString(previous),
+                            Simulation::stateToString(m_scenario)),
+    });
     m_simulationStrategy = makeSimulationStrategy(scenario);
     m_simulationStrategy->reset();
     resetTelemetryToIdle();
@@ -160,4 +174,9 @@ void SimulatedMachineBackend::resetTelemetryToIdle()
     m_telemetry.temperature = RuntimeInit::kTemperature;
     m_telemetry.pressure = RuntimeInit::kPressure;
     m_telemetry.speed = RuntimeInit::kSpeed;
+}
+
+void SimulatedMachineBackend::appendLog(const LogEvent &event)
+{
+    m_logInterface->appendLog(event);
 }
