@@ -33,10 +33,15 @@ QVariant LogModel::data(const QModelIndex &index, int role) const
         return entry.timestamp;
     case LevelRole:
         return entry.level;
+    case SourceRole:
+        return entry.source;
+    case EventTypeRole:
+        return entry.eventType;
     case MessageRole:
         return entry.message;
     case AcknowledgedRole:
         return entry.acknowledged;
+
     default:
         return {};
     }
@@ -46,6 +51,8 @@ QHash<int, QByteArray> LogModel::roleNames() const
 {
     return {{TimestampRole, "timestamp"},
             {LevelRole, "level"},
+            {SourceRole, "source"},
+            {EventTypeRole, "eventType"},
             {MessageRole, "message"},
             {AcknowledgedRole, "acknowledged"}};
 }
@@ -88,7 +95,7 @@ bool LogModel::setData(const QModelIndex &index, const QVariant &value, int role
     }
 }
 
-void LogModel::addLog(const QString &level, const QString &message)
+void LogModel::addLog(const LogEvent &event)
 {
     if (m_entries.size() >= kMaxEntries) {
         beginRemoveRows(QModelIndex(), 0, 0);
@@ -100,8 +107,10 @@ void LogModel::addLog(const QString &level, const QString &message)
 
     beginInsertRows(QModelIndex(), newRow, newRow);
     m_entries.emplace_back(Entry{.timestamp = QDateTime::currentDateTime().toString("HH:mm:ss"),
-                                 .level = level,
-                                 .message = message});
+                                 .level = event.level,
+                                 .source = event.source,
+                                 .eventType = event.eventType,
+                                 .message = event.message});
     endInsertRows();
 }
 

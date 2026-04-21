@@ -7,6 +7,7 @@
 #include <string>
 
 #include "backend/machine_backend.h"
+#include "log/log_event.h"
 #include "log/log_interface.h"
 
 MachineRuntime::MachineRuntime(LogInterface &logInterface,
@@ -194,7 +195,12 @@ void MachineRuntime::start()
         return;
     }
 
-    appendLog("INFO", "Start requested");
+    appendLog(LogEvent{
+        .level = "INFO",
+        .source = "runtime",
+        .eventType = "runtime.start.requested",
+        .message = "Start requested",
+    });
     recordHistoryMarker("start", "Start", "#22c55e");
     m_backend->requestStart();
 }
@@ -205,7 +211,12 @@ void MachineRuntime::stop()
         return;
     }
 
-    appendLog("INFO", "Stop requested");
+    appendLog(LogEvent{
+        .level = "INFO",
+        .source = "runtime",
+        .eventType = "runtime.stop.requested",
+        .message = "Stop requested",
+    });
     recordHistoryMarker("stop", "Stop", "#94a3b8");
     m_backend->requestStop();
 }
@@ -216,7 +227,12 @@ void MachineRuntime::resetFault()
         return;
     }
 
-    appendLog("INFO", "Fault reset requested");
+    appendLog(LogEvent{
+        .level = "INFO",
+        .source = "runtime",
+        .eventType = "runtime.fault_reset.requested",
+        .message = "Fault reset requested",
+    });
     recordHistoryMarker("reset", "Reset", "#a78bfa");
     m_faultResetPending = true;
     m_backend->requestResetFault();
@@ -292,6 +308,14 @@ void MachineRuntime::onStateReported(MachineState state)
 
     const State previousState = m_state;
     m_state = state;
+
+    appendLog(LogEvent{
+        .level = "INFO",
+        .source = "runtime",
+        .eventType = "runtime.state.changed",
+        .message = QString("State changed: %1 -> %2")
+                       .arg(stateToString(previousState), stateToString(m_state)),
+    });
     markStateTransition(QDateTime::currentDateTime());
 
     emit statusChanged();
@@ -303,14 +327,12 @@ void MachineRuntime::onStateReported(MachineState state)
     }
 
     if (previousState == State::Starting && m_state == State::Running) {
-        appendLog("INFO", "Transition to Running completed");
         recordHistoryMarker("running", "Running", "#38bdf8");
         emit evaluateAlarm();
         return;
     }
 
     if (previousState == State::Stopping && m_state == State::Idle) {
-        appendLog("INFO", "Transition to Idle completed");
         recordHistoryMarker("idle", "Idle", "#cbd5e1");
         emit resetAlarmState();
         return;
@@ -318,7 +340,12 @@ void MachineRuntime::onStateReported(MachineState state)
 
     if (previousState == State::Fault && m_state == State::Idle) {
         m_faultResetPending = false;
-        appendLog("INFO", "Fault reset completed");
+        appendLog(LogEvent{
+            .level = "INFO",
+            .source = "runtime",
+            .eventType = "runtime.fault_reset.completed",
+            .message = "Fault reset completed",
+        });
         recordHistoryMarker("idle", "Idle", "#cbd5e1");
         emit resetAlarmState();
     }
@@ -330,7 +357,15 @@ void MachineRuntime::enterFault()
         return;
     }
 
+    const State previousState = m_state;
     m_state = State::Fault;
+    appendLog(LogEvent{
+        .level = "INFO",
+        .source = "runtime",
+        .eventType = "runtime.state.changed",
+        .message = QString("State changed: %1 -> %2")
+                       .arg(stateToString(previousState), stateToString(m_state)),
+    });
     m_faultResetPending = false;
     markStateTransition(QDateTime::currentDateTime());
 
@@ -346,9 +381,9 @@ void MachineRuntime::enterFault()
     m_backend->requestSafeShutdown();
 }
 
-void MachineRuntime::appendLog(const QString &level, const QString &message)
+void MachineRuntime::appendLog(const LogEvent &event)
 {
-    m_logInterface->appendLog(level, message);
+    m_logInterface->appendLog(event);
 }
 
 QString MachineRuntime::stateToString(State state) const

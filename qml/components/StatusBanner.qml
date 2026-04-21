@@ -42,20 +42,6 @@ Rectangle {
     }
 
 
-    Rectangle {
-        visible: root.embedded
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.leftMargin: 1
-        anchors.rightMargin: 1
-        anchors.topMargin: 1
-        height: 1
-        radius: 1
-        color: "#ecf5ff"
-        opacity: root.alertActive ? 0.09 : 0.06
-    }
-
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: root.embedded ? 12 : 14
@@ -87,7 +73,7 @@ Rectangle {
 
             Item {
                 id: marqueeTrack
-                width: marqueeActive
+                width: marqueeViewport.marqueeActive
                     ? (marqueeText.implicitWidth * 2) + root.marqueeGap
                     : marqueeText.implicitWidth
                 height: parent.height
@@ -102,7 +88,7 @@ Rectangle {
                 }
 
                 Text {
-                    visible: parent.parent.marqueeActive
+                    visible: marqueeViewport.marqueeActive
                     anchors.verticalCenter: parent.verticalCenter
                     x: marqueeText.implicitWidth + root.marqueeGap
                     text: root.statusText

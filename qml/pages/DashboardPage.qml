@@ -29,10 +29,6 @@ Item {
         ? root.alarm.alarmText
         : ""
     readonly property string activeAlarmMetric: root.alarm.activeMetric
-    readonly property bool headerDetached: scrollArea.contentItem
-        ? scrollArea.contentItem.contentY > 1
-        : false
-
     function metricSeverity(metricKey) {
         if (root.activeAlarmMetric !== metricKey)
             return "normal"
@@ -157,43 +153,57 @@ Item {
                 }
             }
 
+        }
+
+        Item {
+            Layout.fillWidth: true
+            Layout.leftMargin: root.pageMargin
+            Layout.rightMargin: root.pageMargin
+            implicitHeight: 14
+
             Rectangle {
                 anchors.left: parent.left
                 anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                height: 1
-                color: "#334155"
-                opacity: root.headerDetached ? 1.0 : 0.0
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 140
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: 2
+                anchors.rightMargin: 2
+                height: 12
+                radius: 6
+                gradient: Gradient {
+                    GradientStop {
+                        position: 0.0
+                        color: "#00182334"
+                    }
+                    GradientStop {
+                        position: 0.34
+                        color: "#121b2a3d"
+                    }
+                    GradientStop {
+                        position: 0.5
+                        color: "#22324754"
+                    }
+                    GradientStop {
+                        position: 0.66
+                        color: "#121b2a3d"
+                    }
+                    GradientStop {
+                        position: 1.0
+                        color: "#00182334"
                     }
                 }
+                opacity: 0.42
             }
 
             Rectangle {
                 anchors.left: parent.left
                 anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                height: 16
-                opacity: root.headerDetached ? 0.8 : 0.0
-                gradient: Gradient {
-                    GradientStop {
-                        position: 0.0
-                        color: "#1b2535"
-                    }
-                    GradientStop {
-                        position: 1.0
-                        color: "#001b2535"
-                    }
-                }
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 140
-                    }
-                }
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+                anchors.verticalCenter: parent.verticalCenter
+                height: 1
+                radius: 1
+                color: "#9eb3cb"
+                opacity: 0.14
             }
         }
 
@@ -204,12 +214,13 @@ Item {
             Layout.bottomMargin: root.pageMargin
             clip: true
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AlwaysOff
 
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 16
                 x: root.pageMargin
-                y: 12
+                y: 0
                 width: Math.max(0, scrollArea.availableWidth - (root.pageMargin * 2))
 
                 RowLayout {

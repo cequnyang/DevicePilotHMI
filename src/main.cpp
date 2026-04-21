@@ -1,5 +1,6 @@
 #include <QCoreApplication>
 #include <QGuiApplication>
+#include <QQuickStyle>
 #include <QQmlApplicationEngine>
 #include <QVariant>
 #include <qqml.h>
@@ -28,12 +29,13 @@ int main(int argc, char *argv[])
                                      "SimulationScenario",
                                      "Enums only");
 
+    QQuickStyle::setStyle("Basic");
     QGuiApplication app(argc, argv);
 
     LogModel logModel;
     LogInterface logInterface(logModel);
     SettingsManager settingsManager(logInterface);
-    SimulatedMachineBackend simulatedBackend(settingsManager);
+    SimulatedMachineBackend simulatedBackend(logInterface, settingsManager);
     SimulationControl simulationControl(simulatedBackend);
     MachineRuntime machineRuntime(logInterface, simulatedBackend);
     AlarmManager alarmManager(logInterface, settingsManager, machineRuntime);

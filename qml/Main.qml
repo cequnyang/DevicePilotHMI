@@ -19,6 +19,7 @@ ApplicationWindow {
     width: 1100
     minimumWidth: 750
     height: 760
+    minimumHeight: 420
     visible: true
     title: "DevicePilotHMI"
     flags: root.useCustomWindowChrome ? (Qt.Window | Qt.FramelessWindowHint) : Qt.Window
@@ -32,6 +33,15 @@ ApplicationWindow {
     readonly property int windowFrameMargin: root.useCustomWindowChrome && !root.windowIsExpanded ? 8 : 0
     readonly property int windowCornerRadius: root.useCustomWindowChrome && !root.windowIsExpanded ? 18 : 0
     readonly property int headerBannerPreferredWidth: 300
+    readonly property color deviceStatusColor: root.alarm.isFault
+        ? "#ef4444"
+        : (root.alarm.hasWarning ? "#f59e0b" : "#22c55e")
+    readonly property color deviceStatusBorderColor: root.alarm.isFault
+        ? "#7f1d1d"
+        : (root.alarm.hasWarning ? "#92400e" : "#2d6a4f")
+    readonly property string deviceStatusLabel: root.alarm.isFault
+        ? "Fault"
+        : (root.alarm.hasWarning ? "Warning" : "Normal")
     property var scenarioOptions: [
         { label: "Normal Ramp", scenario: SimulationScenario.NormalRamp },
         { label: "Overload", scenario: SimulationScenario.Overload },
@@ -113,12 +123,6 @@ ApplicationWindow {
                     return "#d6e2f0"
                 }
 
-                function fillForRestoreCutout() {
-                    if (control.buttonType === "close")
-                        return control.down ? "#8b1d1d" : (control.hovered ? "#aa2a2a" : "transparent")
-                    return control.down ? "#162231" : (control.hovered ? "#213145" : "#1f2937")
-                }
-
                 onPaint: {
                     const ctx = getContext("2d")
                     ctx.reset()
@@ -137,8 +141,7 @@ ApplicationWindow {
                         ctx.strokeRect(2.0, 2.0, width - 4.0, height - 4.0)
                     } else if (control.buttonType === "restore") {
                         ctx.strokeRect(4.5, 1.5, width - 6.0, height - 6.0)
-                        ctx.fillStyle = fillForRestoreCutout()
-                        ctx.fillRect(1.0, 4.0, width - 5.0, height - 5.0)
+                        ctx.clearRect(1.0, 4.0, width - 5.0, height - 5.0)
                         ctx.strokeStyle = strokeForButton()
                         ctx.strokeRect(1.5, 4.5, width - 6.0, height - 6.0)
                     } else if (control.buttonType === "close") {
@@ -157,11 +160,9 @@ ApplicationWindow {
     component ConsoleTabButton : TabButton {
         id: control
 
-        readonly property real segmentWidth: Math.floor((tabBar.availableWidth
-                                                          - tabBar.leftPadding
-                                                          - tabBar.rightPadding
-                                                          - (tabBar.spacing * Math.max(0, tabBar.count - 1)))
-                                                         / Math.max(1, tabBar.count))
+        readonly property real segmentWidth: (tabBar.availableWidth
+                                              - (tabBar.spacing * Math.max(0, tabBar.count - 1)))
+                                             / Math.max(1, tabBar.count)
 
         width: segmentWidth
         height: 44
@@ -175,52 +176,20 @@ ApplicationWindow {
             Rectangle {
                 anchors.fill: parent
                 radius: 12
-                color: "#0b1421"
+                color: control.checked
+                    ? "#162334"
+                    : (control.hovered ? "#131d2b" : "transparent")
                 border.width: 1
-                border.color: control.checked ? "#46637c" : "#243447"
-            }
+                border.color: control.checked ? "#5f84a4" : "#243447"
 
-            Rectangle {
-                anchors.fill: parent
-                radius: 12
-                color: "#152334"
-                opacity: control.hovered && !control.checked ? 1.0 : 0.0
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 100
-                    }
-                }
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                radius: 12
-                color: "#122030"
-                border.width: 1
-                border.color: "#5f84a4"
-                opacity: control.checked ? 1.0 : 0.0
-
-                Behavior on opacity {
-                    NumberAnimation {
+                Behavior on color {
+                    ColorAnimation {
                         duration: 120
                     }
                 }
-            }
 
-            Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.leftMargin: 8
-                anchors.rightMargin: 8
-                anchors.topMargin: 1
-                height: 1
-                color: "#dbeafe"
-                opacity: control.checked ? 0.16 : (control.hovered ? 0.08 : 0.04)
-
-                Behavior on opacity {
-                    NumberAnimation {
+                Behavior on border.color {
+                    ColorAnimation {
                         duration: 120
                     }
                 }
@@ -232,7 +201,7 @@ ApplicationWindow {
                 anchors.bottom: parent.bottom
                 anchors.leftMargin: 14
                 anchors.rightMargin: 14
-                anchors.bottomMargin: 4
+                anchors.bottomMargin: 3
                 height: 2
                 radius: 1
                 color: "#8cc7f2"
@@ -250,10 +219,96 @@ ApplicationWindow {
             text: control.text
             font.pixelSize: 15
             font.weight: control.checked ? Font.DemiBold : Font.Medium
-            color: control.checked ? "#f3f8fe" : "#9fb1c6"
+            color: control.checked ? "#f3f8fe" : (control.hovered ? "#c4d3e3" : "#9fb1c6")
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
+        }
+    }
+
+    component TitleStatusIndicator : Item {
+        id: indicator
+
+        required property color accentColor
+        required property color frameColor
+        property string statusLabel: ""
+        property real pulseLevel: 1.0
+
+        implicitWidth: 18
+        implicitHeight: 18
+
+        SequentialAnimation on pulseLevel {
+            running: indicator.visible
+            loops: Animation.Infinite
+
+            NumberAnimation {
+                to: 0.60
+                duration: 1400
+                easing.type: Easing.InOutSine
+            }
+
+            NumberAnimation {
+                to: 1.0
+                duration: 1400
+                easing.type: Easing.InOutSine
+            }
+        }
+
+        ToolTip.visible: hover.hovered
+        ToolTip.delay: 250
+        ToolTip.text: indicator.statusLabel.length > 0
+            ? "Device status: " + indicator.statusLabel
+            : ""
+
+        HoverHandler {
+            id: hover
+        }
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: parent.width + 4
+            height: parent.height + 4
+            radius: 7
+            color: indicator.accentColor
+            opacity: 0.10 + (indicator.pulseLevel * 0.12)
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 5
+            color: "#0f1725"
+            border.width: 1
+            border.color: indicator.frameColor
+            opacity: 0.88
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: 4
+            color: "#111c2b"
+            border.width: 1
+            border.color: "#dbeafe"
+            opacity: 0.06 + (indicator.pulseLevel * 0.08)
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 4
+            radius: 3
+            color: indicator.accentColor
+            opacity: indicator.pulseLevel
+        }
+
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 3
+            height: Math.max(2, Math.floor(parent.height * 0.28))
+            radius: 2
+            color: "#f8fbff"
+            opacity: 0.04 + (indicator.pulseLevel * 0.08)
         }
     }
 
@@ -262,19 +317,11 @@ ApplicationWindow {
         anchors.fill: parent
         anchors.margins: root.windowFrameMargin
         radius: root.windowCornerRadius
+        antialiasing: true
         color: "#1f2937"
-        border.width: root.useCustomWindowChrome && !root.windowIsExpanded ? 1 : 0
-        border.color: "#33475f"
+        border.width: root.useCustomWindowChrome ? 1 : 0
+        border.color: "#16202d"
         clip: true
-
-        Rectangle {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            height: 1
-            color: "#edf4ff"
-            opacity: root.windowIsExpanded ? 0.0 : 0.10
-        }
 
         ColumnLayout {
         anchors.fill: parent
@@ -283,9 +330,17 @@ ApplicationWindow {
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: root.useCustomWindowChrome ? 52 : 64
+            radius: root.windowCornerRadius
             color: "#1f2937"
-            border.width: root.useCustomWindowChrome ? 1 : 0
-            border.color: root.useCustomWindowChrome ? "#32465f" : "transparent"
+            border.width: 0
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: 1
+                color: root.useCustomWindowChrome ? "#32465f" : "transparent"
+            }
 
             RowLayout {
                 anchors.fill: parent
@@ -315,25 +370,15 @@ ApplicationWindow {
 
                             Item {
                                 visible: root.useCustomWindowChrome
-                                implicitWidth: 14
-                                implicitHeight: 14
+                                implicitWidth: 18
+                                implicitHeight: 18
                                 Layout.alignment: Qt.AlignVCenter
 
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: 3
-                                    color: "#d8e3ef"
-                                    opacity: 0.9
-                                }
-
-                                Rectangle {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 2
-                                    anchors.topMargin: 2
-                                    anchors.rightMargin: 2
-                                    anchors.bottomMargin: 2
-                                    radius: 2
-                                    color: "#6da6d9"
+                                TitleStatusIndicator {
+                                    anchors.centerIn: parent
+                                    accentColor: root.deviceStatusColor
+                                    frameColor: root.deviceStatusBorderColor
+                                    statusLabel: root.deviceStatusLabel
                                 }
                             }
 
@@ -413,42 +458,9 @@ ApplicationWindow {
 
             background: Rectangle {
                 radius: 14
-                gradient: Gradient {
-                    GradientStop {
-                        position: 0.0
-                        color: "#162231"
-                    }
-                    GradientStop {
-                        position: 1.0
-                        color: "#0c1421"
-                    }
-                }
+                color: "#101926"
                 border.width: 1
-                border.color: "#31445b"
-
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.leftMargin: 1
-                    anchors.rightMargin: 1
-                    anchors.topMargin: 1
-                    height: 1
-                    color: "#e2efff"
-                    opacity: 0.10
-                }
-
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 12
-                    anchors.bottomMargin: 1
-                    height: 1
-                    color: "#0a111c"
-                    opacity: 0.9
-                }
+                border.color: "#28384b"
             }
 
             ConsoleTabButton { text: "Dashboard" }
@@ -473,10 +485,12 @@ ApplicationWindow {
             Pages.LogPage {
                 logModel: root.logModel
                 filteredLogModel: root.filteredLogModel
+                pageCornerRadius: root.windowCornerRadius
             }
 
             Pages.SettingsPage {
                 session: root.settingsSession
+                pageCornerRadius: root.windowCornerRadius
             }
         }
         }

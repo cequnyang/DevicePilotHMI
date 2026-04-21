@@ -8,6 +8,7 @@
 #include "settings/settings_defined.h"
 
 class LogInterface;
+struct LogEvent;
 
 using Settings::Snapshot;
 class SettingsManager : public QObject
@@ -37,7 +38,7 @@ public:
 private:
     void load();
     void emitSnapshotChanges(const Snapshot &oldSnapshot, const Snapshot &newSnapshot);
-    void appendLog(const QString &level, const QString &message);
+    void appendLog(const LogEvent &event);
 
 private:
     QPointer<LogInterface> m_logInterface{nullptr};

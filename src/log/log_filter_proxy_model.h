@@ -16,6 +16,7 @@ class LogFilterProxyModel : public QSortFilterProxyModel
     Q_PROPERTY(QString searchText READ searchText WRITE setSearchText NOTIFY searchTextChanged)
     Q_PROPERTY(bool showOnlyUnacknowledged READ showOnlyUnacknowledged WRITE
                    setShowOnlyUnacknowledged NOTIFY showOnlyUnacknowledgedChanged)
+    Q_PROPERTY(bool newestFirst READ newestFirst WRITE setNewestFirst NOTIFY newestFirstChanged)
 
 public:
     explicit LogFilterProxyModel(QObject *parent = nullptr);
@@ -32,6 +33,9 @@ public:
     bool showOnlyUnacknowledged() const;
     void setShowOnlyUnacknowledged(bool value);
 
+    bool newestFirst() const;
+    void setNewestFirst(bool value);
+
     Q_INVOKABLE void setAcknowledged(int proxyRow, bool acknowledged);
 
 signals:
@@ -39,13 +43,16 @@ signals:
     void levelFilterChanged();
     void searchTextChanged();
     void showOnlyUnacknowledgedChanged();
+    void newestFirstChanged();
 
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
+    bool lessThan(const QModelIndex &sourceLeft, const QModelIndex &sourceRight) const override;
 
 private:
     LogModel *m_sourceLogModel{nullptr};
     QString m_levelFilter;
     QString m_searchText;
     bool m_showOnlyUnacknowledged{false};
+    bool m_newestFirst{true};
 };

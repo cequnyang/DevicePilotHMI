@@ -8,6 +8,7 @@
 #include "settings/settings_defined.h"
 
 class LogInterface;
+class LogEvent;
 class SettingsManager;
 class MachineRuntime;
 
@@ -38,7 +39,7 @@ signals:
     void policyContextChanged();
 
 private:
-    void appendLog(const QString &level, const QString &message);
+    void appendLog(const LogEvent &event);
 
 private:
     QPointer<LogInterface> m_logInterface{nullptr};

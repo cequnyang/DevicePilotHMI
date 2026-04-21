@@ -83,14 +83,14 @@ Rectangle {
             Label {
                 text: root.valueText
                 color: root.valueColor
-                font.pixelSize: 32
+                font.pixelSize: 48
                 font.bold: true
             }
 
             Label {
                 text: root.unitText
                 color: root.unitColor
-                font.pixelSize: 16
+                font.pixelSize: 24
                 Layout.alignment: Qt.AlignBottom
             }
         }

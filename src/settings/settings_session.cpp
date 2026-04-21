@@ -1,5 +1,6 @@
 #include "settings/settings_session.h"
 
+#include "log/log_event.h"
 #include "log/log_interface.h"
 #include "settings/settings_apply_service.h"
 #include "settings/settings_manager.h"
@@ -20,7 +21,12 @@ SettingsSession::SettingsSession(LogInterface &logInterface,
     Q_ASSERT(m_applyService);
     Q_ASSERT(m_draft);
 
-    appendLog("INFO", "Settings Session initialized");
+    appendLog(LogEvent{
+        .level = "INFO",
+        .source = "settings",
+        .eventType = "settings.session.initialized",
+        .message = "Settings Session initialized",
+    });
 
     connect(m_draft, &SettingsDraft::stateChanged, this, &SettingsSession::applyStateChanged);
     connect(m_applyService,
@@ -93,7 +99,7 @@ const Snapshot &SettingsSession::snapshotFromDraft() const
     return m_draft->snapshot();
 }
 
-void SettingsSession::appendLog(const QString &level, const QString &message)
+void SettingsSession::appendLog(const LogEvent &event)
 {
-    m_logInterface->appendLog(level, message);
+    m_logInterface->appendLog(event);
 }
