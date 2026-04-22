@@ -59,6 +59,7 @@ signals:
 
 public:
     void loadFrom(SettingsManager *settings);
+    void loadSnapshot(const Snapshot &snapshot);
     const Snapshot &snapshot() const;
     bool valid() const;
 

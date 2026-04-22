@@ -7,6 +7,28 @@ class FakeMachineBackend : public MachineBackend
 public:
     using MachineBackend::MachineBackend;
 
+    void setCompleteResetImmediately(bool value)
+    {
+        m_completeResetImmediately = value;
+    }
+
+    void completePendingReset()
+    {
+        if (!m_resetRequested || m_state != MachineState::Fault) {
+            return;
+        }
+
+        m_resetRequested = false;
+        m_telemetry = {
+            RuntimeInit::kTemperature,
+            RuntimeInit::kPressure,
+            RuntimeInit::kSpeed,
+        };
+        emit telemetryReceived(m_telemetry);
+        m_state = MachineState::Idle;
+        emit stateReported(m_state);
+    }
+
     void requestStart() override
     {
         if (m_state != MachineState::Idle) {
@@ -33,6 +55,11 @@ public:
             return;
         }
 
+        if (!m_completeResetImmediately) {
+            m_resetRequested = true;
+            return;
+        }
+
         m_telemetry = {
             RuntimeInit::kTemperature,
             RuntimeInit::kPressure,
@@ -49,6 +76,7 @@ public:
             return;
         }
 
+        m_resetRequested = false;
         m_telemetry.speed = 0;
         emit telemetryReceived(m_telemetry);
 
@@ -69,6 +97,8 @@ public:
     }
 
 private:
+    bool m_completeResetImmediately{true};
+    bool m_resetRequested{false};
     MachineState m_state{MachineState::Idle};
     TelemetryFrame m_telemetry{
         RuntimeInit::kTemperature,

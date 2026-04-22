@@ -78,6 +78,28 @@ target_link_libraries(settings_apply_service_tests PRIVATE
 add_test(NAME settings_apply_service_tests COMMAND settings_apply_service_tests)
 configure_test_runtime(settings_apply_service_tests settings_apply_service_tests)
 
+add_executable(settings_manager_tests
+    settings_manager_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_manager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_file_store.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_json_codec.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_validation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_interface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_model.cpp
+)
+
+target_link_libraries(settings_manager_tests PRIVATE
+    test_common
+    Qt6::Qml
+)
+
+set_target_properties(settings_manager_tests PROPERTIES
+    AUTOMOC_COMPILER_PREDEFINES OFF
+)
+
+add_test(NAME settings_manager_tests COMMAND settings_manager_tests)
+configure_test_runtime(settings_manager_tests settings_manager_tests)
+
 add_executable(settings_draft_tests
     settings_draft_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_draft.cpp
@@ -100,6 +122,7 @@ configure_test_runtime(settings_draft_tests settings_draft_tests)
 add_executable(settings_session_tests
     settings_session_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/backend/machine_backend.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_presets.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_session.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_draft.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_apply_service.cpp

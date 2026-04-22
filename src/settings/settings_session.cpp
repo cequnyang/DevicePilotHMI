@@ -28,7 +28,10 @@ SettingsSession::SettingsSession(LogInterface &logInterface,
         .message = "Settings Session initialized",
     });
 
-    connect(m_draft, &SettingsDraft::stateChanged, this, &SettingsSession::applyStateChanged);
+    connect(m_draft, &SettingsDraft::stateChanged, this, [this]() {
+        emit applyStateChanged();
+        emit comparisonStateChanged();
+    });
     connect(m_applyService,
             &SettingsApplyService::policyContextChanged,
             this,
@@ -36,6 +39,12 @@ SettingsSession::SettingsSession(LogInterface &logInterface,
     connect(m_manager, &SettingsManager::thresholdsChanged, this, [this]() {
         emit committedSettingsChanged();
         emit applyStateChanged();
+        emit comparisonStateChanged();
+    });
+    connect(m_manager, &SettingsManager::updateIntervalMsChanged, this, [this]() {
+        emit committedSettingsChanged();
+        emit applyStateChanged();
+        emit comparisonStateChanged();
     });
     reload();
 }
@@ -59,6 +68,30 @@ QString SettingsSession::applyRestrictionReason() const
     return m_applyService->settingsApplyRestrictionReason(snapshotFromDraft());
 }
 
+QString SettingsSession::committedThresholdPresetName() const
+{
+    return thresholdPresetNameForSnapshot(m_manager->snapshot());
+}
+
+QString SettingsSession::draftThresholdPresetName() const
+{
+    return thresholdPresetNameForSnapshot(snapshotFromDraft());
+}
+
+int SettingsSession::pendingChangeCount() const
+{
+    const Snapshot &draft = snapshotFromDraft();
+    const Snapshot &committed = m_manager->snapshot();
+
+    int count = 0;
+    count += static_cast<int>(draft.warningTemperature != committed.warningTemperature);
+    count += static_cast<int>(draft.faultTemperature != committed.faultTemperature);
+    count += static_cast<int>(draft.warningPressure != committed.warningPressure);
+    count += static_cast<int>(draft.faultPressure != committed.faultPressure);
+    count += static_cast<int>(draft.updateIntervalMs != committed.updateIntervalMs);
+    return count;
+}
+
 int SettingsSession::committedWarningTemperature() const
 {
     return m_manager->snapshot().warningTemperature;
@@ -79,6 +112,11 @@ int SettingsSession::committedFaultPressure() const
     return m_manager->snapshot().faultPressure;
 }
 
+int SettingsSession::committedUpdateIntervalMs() const
+{
+    return m_manager->snapshot().updateIntervalMs;
+}
+
 bool SettingsSession::apply()
 {
     if (!m_applyService->applySettings(snapshotFromDraft())) {
@@ -89,6 +127,21 @@ bool SettingsSession::apply()
     return true;
 }
 
+void SettingsSession::loadConservativePreset()
+{
+    loadThresholdPreset(Settings::Presets::ThresholdPresetId::Conservative);
+}
+
+void SettingsSession::loadBalancedPreset()
+{
+    loadThresholdPreset(Settings::Presets::ThresholdPresetId::Balanced);
+}
+
+void SettingsSession::loadAggressivePreset()
+{
+    loadThresholdPreset(Settings::Presets::ThresholdPresetId::Aggressive);
+}
+
 void SettingsSession::reload()
 {
     m_draft->loadFrom(m_manager);
@@ -97,6 +150,31 @@ void SettingsSession::reload()
 const Snapshot &SettingsSession::snapshotFromDraft() const
 {
     return m_draft->snapshot();
+}
+
+QString SettingsSession::thresholdPresetNameForSnapshot(const Snapshot &snapshot) const
+{
+    using Settings::Presets::ThresholdPresetId;
+
+    constexpr ThresholdPresetId kPresets[] = {
+        ThresholdPresetId::Conservative,
+        ThresholdPresetId::Balanced,
+        ThresholdPresetId::Aggressive,
+    };
+
+    for (const auto preset : kPresets) {
+        if (Settings::Presets::matchesThresholdPreset(snapshot, preset)) {
+            return Settings::Presets::thresholdPresetName(preset);
+        }
+    }
+
+    return QStringLiteral("Custom");
+}
+
+void SettingsSession::loadThresholdPreset(Settings::Presets::ThresholdPresetId id)
+{
+    m_draft->loadSnapshot(
+        Settings::Presets::thresholdPresetSnapshot(id, m_draft->updateIntervalMs()));
 }
 
 void SettingsSession::appendLog(const LogEvent &event)

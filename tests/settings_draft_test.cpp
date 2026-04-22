@@ -17,6 +17,7 @@ private slots:
     void initTestCase();
     void cleanup();
     void initialDraftIsValidAndClean();
+    void loadSnapshotUpdatesDraftWithoutResettingOriginalSnapshot();
     void warningTemperatureAtFaultBoundaryIsClampedWithMessage();
     void faultTemperatureAtWarningBoundaryIsClampedWithMessage();
     void warningPressureAtFaultBoundaryIsClampedWithMessage();
@@ -45,6 +46,22 @@ void SettingsDraftTest::initialDraftIsValidAndClean()
     QVERIFY(draft.valid());
     QVERIFY(!draft.dirty());
     QVERIFY(!draft.canApply());
+    QVERIFY(draft.validationMessage().isEmpty());
+}
+
+void SettingsDraftTest::loadSnapshotUpdatesDraftWithoutResettingOriginalSnapshot()
+{
+    SettingsDraft draft;
+
+    draft.setWarningTemperature(draft.faultTemperature());
+    QVERIFY(!draft.validationMessage().isEmpty());
+
+    const Settings::Snapshot replacement{78, 98, 118, 138, 1200};
+    draft.loadSnapshot(replacement);
+
+    QCOMPARE(draft.snapshot(), replacement);
+    QVERIFY(draft.dirty());
+    QVERIFY(draft.canApply());
     QVERIFY(draft.validationMessage().isEmpty());
 }
 

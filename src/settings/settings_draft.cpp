@@ -146,6 +146,22 @@ void SettingsDraft::loadFrom(SettingsManager *settings)
     m_invalidValueSetAttempted = false;
     emitDraftChange(old);
 }
+
+void SettingsDraft::loadSnapshot(const Snapshot &snapshot)
+{
+    if (m_snapshot == snapshot) {
+        m_invalidValueSetAttempted = false;
+        revalidate();
+        emit stateChanged();
+        return;
+    }
+
+    const auto old = m_snapshot;
+    m_snapshot = snapshot;
+    m_invalidValueSetAttempted = false;
+    emitDraftChange(old);
+}
+
 void SettingsDraft::resetDraftToDefaults()
 {
     const auto defaults = Settings::defaults();

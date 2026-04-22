@@ -28,6 +28,7 @@ class MachineRuntime : public QObject
     Q_PROPERTY(bool canStart READ canStart NOTIFY stateChanged)
     Q_PROPERTY(bool canStop READ canStop NOTIFY stateChanged)
     Q_PROPERTY(bool canResetFault READ canResetFault NOTIFY stateChanged)
+    Q_PROPERTY(bool faultResetPending READ faultResetPending NOTIFY stateChanged)
     Q_PROPERTY(QString startDisabledReason READ startDisabledReason NOTIFY stateChanged)
     Q_PROPERTY(QString stopDisabledReason READ stopDisabledReason NOTIFY stateChanged)
     Q_PROPERTY(QString resetDisabledReason READ resetDisabledReason NOTIFY stateChanged)
@@ -60,6 +61,7 @@ public:
     bool canStart() const;
     bool canStop() const;
     bool canResetFault() const;
+    bool faultResetPending() const;
     QString startDisabledReason() const;
     QString stopDisabledReason() const;
     QString resetDisabledReason() const;
@@ -87,6 +89,8 @@ signals:
     void stateChanged();
     void evaluateAlarm();
     void resetAlarmState();
+    void faultResetRequested();
+    void faultResetCompleted();
     void historyChanged();
     void stateContextChanged();
 
