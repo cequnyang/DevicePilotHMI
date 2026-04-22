@@ -19,36 +19,67 @@ Item {
     readonly property int cardRadius: 12
     readonly property int cardInnerMargin: 14
     readonly property color cardBorderColor: "#314056"
-    readonly property string riskLabel: root.alarm.isFault
-        ? "Critical"
-        : (root.alarm.hasWarning ? "Warning" : "Healthy")
+    readonly property string riskLabel: root.alarm.stateLabel
     readonly property color riskColor: root.alarm.isFault
         ? "#ef4444"
         : (root.alarm.hasWarning ? "#f59e0b" : "#22c55e")
-    readonly property string riskDetailText: (root.alarm.isFault || root.alarm.hasWarning)
-        ? root.alarm.alarmText
-        : ""
+    readonly property string riskHeadlineText: root.alarm.headline
+    readonly property string riskDetailText: root.alarm.detail
+    readonly property string riskHintText: root.alarm.operatorHint
     readonly property string activeAlarmMetric: root.alarm.activeMetric
-    function metricSeverity(metricKey) {
-        if (root.activeAlarmMetric !== metricKey)
+    function metricLiveSeverity(metricKey) {
+        if (metricKey === "temperature") {
+            if (root.runtime.temperature >= root.settingsSession.committedFaultTemperature)
+                return "fault"
+            if (root.runtime.temperature >= root.settingsSession.committedWarningTemperature)
+                return "warning"
             return "normal"
-        if (root.alarm.isFault)
-            return "fault"
-        if (root.alarm.hasWarning)
-            return "warning"
+        }
+        if (metricKey === "pressure") {
+            if (root.runtime.pressure >= root.settingsSession.committedFaultPressure)
+                return "fault"
+            if (root.runtime.pressure >= root.settingsSession.committedWarningPressure)
+                return "warning"
+            return "normal"
+        }
         return "normal"
     }
 
+    function metricSeverity(metricKey) {
+        if (root.alarm.isFault)
+            return root.activeAlarmMetric === metricKey ? "fault" : root.metricLiveSeverity(metricKey)
+        const liveSeverity = root.metricLiveSeverity(metricKey)
+        if (liveSeverity !== "normal")
+            return liveSeverity
+        if (root.alarm.recoveryActive)
+            return root.activeAlarmMetric === metricKey ? "recovered" : "normal"
+        return "normal"
+    }
+
+    function metricAccentColor(metricKey) {
+        const severity = root.metricSeverity(metricKey)
+        if (severity === "fault")
+            return "#ef4444"
+        if (severity === "warning")
+            return "#f59e0b"
+        if (severity === "recovered")
+            return "#22c55e"
+        return ""
+    }
+
     function metricTitleColor(metricKey) {
-        return root.activeAlarmMetric === metricKey ? root.riskColor : "#9ca3af"
+        const accentColor = root.metricAccentColor(metricKey)
+        return accentColor.length > 0 ? accentColor : "#9ca3af"
     }
 
     function metricValueColor(metricKey) {
-        return root.activeAlarmMetric === metricKey ? root.riskColor : "white"
+        const accentColor = root.metricAccentColor(metricKey)
+        return accentColor.length > 0 ? accentColor : "white"
     }
 
     function metricUnitColor(metricKey) {
-        return root.activeAlarmMetric === metricKey ? root.riskColor : "#d1d5db"
+        const accentColor = root.metricAccentColor(metricKey)
+        return accentColor.length > 0 ? accentColor : "#d1d5db"
     }
 
     function metricStatusText(metricKey) {
@@ -57,6 +88,8 @@ Item {
             return "Fault"
         if (severity === "warning")
             return "Warning"
+        if (severity === "recovered")
+            return "Recovered"
         return "Normal"
     }
 
@@ -66,6 +99,8 @@ Item {
             return "#ef4444"
         if (severity === "warning")
             return "#f59e0b"
+        if (severity === "recovered")
+            return "#22c55e"
         return "#94a3b8"
     }
 
@@ -75,6 +110,8 @@ Item {
             return "#261313"
         if (severity === "warning")
             return "#2a1f0a"
+        if (severity === "recovered")
+            return "#10251a"
         return "#0f172a"
     }
 
@@ -84,6 +121,8 @@ Item {
             return "#7f1d1d"
         if (severity === "warning")
             return "#92400e"
+        if (severity === "recovered")
+            return "#2d6a4f"
         return "#334155"
     }
 
@@ -365,7 +404,9 @@ Item {
                     scenarioText: root.simulCtrl.scenarioName
                     riskText: root.riskLabel
                     riskColor: root.riskColor
+                    riskHeadlineText: root.riskHeadlineText
                     riskDetailText: root.riskDetailText
+                    riskHintText: root.riskHintText
                 }
 
                 Components.ControlPanel {

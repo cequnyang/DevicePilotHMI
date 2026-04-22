@@ -37,7 +37,7 @@ private slots:
     void onTransitionTimeout();
 
 private:
-    enum class PendingTransition { None, FinishStart, FinishStop };
+    enum class PendingTransition { None, FinishStart, FinishStop, CompleteFaultReset };
 
     void setState(MachineState newState);
     void publishTelemetry();

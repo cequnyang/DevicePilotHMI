@@ -29,6 +29,8 @@ private slots:
     void invalidJsonReturnsDefaultsAndMarksRepaired();
     void nonObjectRootReturnsDefaultsAndMarksRepaired();
     void invalidValuesReturnDefaultsAndMarksRepaired();
+    void missingLogPageReturnsSnapshotAndDefaultPreferences();
+    void invalidLogPageRepairsPreferencesWithoutDiscardingSnapshot();
 };
 
 void SettingsFileStoreTest::initTestCase()
@@ -45,20 +47,22 @@ void SettingsFileStoreTest::cleanup()
 
 void SettingsFileStoreTest::persistAndLoadRoundTrip()
 {
-    Settings::Snapshot snapshot = Settings::defaults();
-    snapshot.warningTemperature = 90;
-    snapshot.faultTemperature = 120;
-    snapshot.warningPressure = 130;
-    snapshot.faultPressure = 145;
-    snapshot.updateIntervalMs = 1500;
+    Settings::PersistedConfig config = Settings::defaultsConfig();
+    config.snapshot.warningTemperature = 90;
+    config.snapshot.faultTemperature = 120;
+    config.snapshot.warningPressure = 130;
+    config.snapshot.faultPressure = 145;
+    config.snapshot.updateIntervalMs = 1500;
+    config.logViewPreferences.showTimestamp = false;
+    config.logViewPreferences.showSource = false;
 
-    const auto persist = Settings::Store::persistSnapshot(snapshot);
+    const auto persist = Settings::Store::persistConfig(config);
     QVERIFY(persist.ok);
     QVERIFY(persist.reason.isEmpty());
     QVERIFY(QFileInfo::exists(Settings::Store::configFilePath()));
 
-    const auto load = Settings::Store::loadSnapshot();
-    QCOMPARE(load.snapshot, snapshot);
+    const auto load = Settings::Store::loadConfig();
+    QCOMPARE(load.config, config);
     QVERIFY(!load.repaired);
     QVERIFY(load.reason.isEmpty());
 }
@@ -67,9 +71,9 @@ void SettingsFileStoreTest::missingFileReturnsDefaultsAndMarksRepaired()
 {
     QFile::remove(Settings::Store::configFilePath());
 
-    const auto load = Settings::Store::loadSnapshot();
+    const auto load = Settings::Store::loadConfig();
 
-    QCOMPARE(load.snapshot, Settings::defaults());
+    QCOMPARE(load.config, Settings::defaultsConfig());
     QVERIFY(load.repaired);
     QVERIFY(load.reason.contains("does not exist", Qt::CaseInsensitive));
 }
@@ -78,9 +82,9 @@ void SettingsFileStoreTest::invalidJsonReturnsDefaultsAndMarksRepaired()
 {
     writeRawSettingsFile("{ definitely-not-json");
 
-    const auto load = Settings::Store::loadSnapshot();
+    const auto load = Settings::Store::loadConfig();
 
-    QCOMPARE(load.snapshot, Settings::defaults());
+    QCOMPARE(load.config, Settings::defaultsConfig());
     QVERIFY(load.repaired);
     QVERIFY(load.reason.contains("Invalid settings.json structure", Qt::CaseInsensitive));
     QVERIFY(load.reason.contains("Invalid JSON", Qt::CaseInsensitive));
@@ -90,9 +94,9 @@ void SettingsFileStoreTest::nonObjectRootReturnsDefaultsAndMarksRepaired()
 {
     writeRawSettingsFile("[1, 2, 3]");
 
-    const auto load = Settings::Store::loadSnapshot();
+    const auto load = Settings::Store::loadConfig();
 
-    QCOMPARE(load.snapshot, Settings::defaults());
+    QCOMPARE(load.config, Settings::defaultsConfig());
     QVERIFY(load.repaired);
     QVERIFY(load.reason.contains("Invalid settings.json structure", Qt::CaseInsensitive));
     QVERIFY(load.reason.contains("not a JSON object", Qt::CaseInsensitive));
@@ -106,16 +110,74 @@ void SettingsFileStoreTest::invalidValuesReturnDefaultsAndMarksRepaired()
         "faultTemperature": 80,
         "warningPressure": 115,
         "faultPressure": 135,
-        "updateIntervalMs": 1000
+        "updateIntervalMs": 1000,
+        "logPage": {
+            "showTimestamp": false,
+            "showSource": true,
+            "showLevel": false
+        }
     })");
 
-    const auto load = Settings::Store::loadSnapshot();
+    const auto load = Settings::Store::loadConfig();
 
-    QCOMPARE(load.snapshot, Settings::defaults());
+    QCOMPARE(load.config, Settings::defaultsConfig());
     QVERIFY(load.repaired);
     QVERIFY(load.reason.contains("Invalid settings values", Qt::CaseInsensitive));
     QVERIFY(load.reason.contains("Warning temperature must be lower than fault temperature.",
                                  Qt::CaseInsensitive));
+}
+
+void SettingsFileStoreTest::missingLogPageReturnsSnapshotAndDefaultPreferences()
+{
+    writeRawSettingsFile(R"({
+        "schemaVersion": 1,
+        "warningTemperature": 88,
+        "faultTemperature": 108,
+        "warningPressure": 126,
+        "faultPressure": 142,
+        "updateIntervalMs": 1600
+    })");
+
+    const auto load = Settings::Store::loadConfig();
+
+    QCOMPARE(load.config.snapshot.warningTemperature, 88);
+    QCOMPARE(load.config.snapshot.faultTemperature, 108);
+    QCOMPARE(load.config.snapshot.warningPressure, 126);
+    QCOMPARE(load.config.snapshot.faultPressure, 142);
+    QCOMPARE(load.config.snapshot.updateIntervalMs, 1600);
+    QCOMPARE(load.config.logViewPreferences, Settings::defaultLogViewPreferences());
+    QVERIFY(load.repaired);
+    QVERIFY(load.reason.contains("logPage"));
+}
+
+void SettingsFileStoreTest::invalidLogPageRepairsPreferencesWithoutDiscardingSnapshot()
+{
+    writeRawSettingsFile(R"({
+        "schemaVersion": 1,
+        "warningTemperature": 86,
+        "faultTemperature": 102,
+        "warningPressure": 124,
+        "faultPressure": 144,
+        "updateIntervalMs": 1700,
+        "logPage": {
+            "showTimestamp": false,
+            "showSource": 1
+        }
+    })");
+
+    const auto load = Settings::Store::loadConfig();
+
+    QCOMPARE(load.config.snapshot.warningTemperature, 86);
+    QCOMPARE(load.config.snapshot.faultTemperature, 102);
+    QCOMPARE(load.config.snapshot.warningPressure, 124);
+    QCOMPARE(load.config.snapshot.faultPressure, 144);
+    QCOMPARE(load.config.snapshot.updateIntervalMs, 1700);
+    QVERIFY(!load.config.logViewPreferences.showTimestamp);
+    QVERIFY(load.config.logViewPreferences.showSource);
+    QVERIFY(load.config.logViewPreferences.showLevel);
+    QVERIFY(load.repaired);
+    QVERIFY(load.reason.contains("logPage.showSource"));
+    QVERIFY(load.reason.contains("logPage.showLevel"));
 }
 
 QTEST_APPLESS_MAIN(SettingsFileStoreTest)

@@ -8,8 +8,52 @@ Page {
 
     required property var session
     property int pageCornerRadius: 18
-    property int contentMaxWidth: 750
+    property int contentMaxWidth: 980
+    property int compareRowInnerMargin: 14
+    property int compareColumnSpacing: 14
+    property int compareParameterWidth: 220
+    property int compareLiveWidth: 132
+    property int compareDraftWidth: 160
     clip: true
+
+    function formatSettingValue(value, unitLabel) {
+        return unitLabel.length > 0 ? value + " " + unitLabel : String(value)
+    }
+
+    function hasPendingDelta(liveValue, draftValue) {
+        return liveValue !== draftValue
+    }
+
+    function pendingDeltaText(liveValue, draftValue, unitLabel) {
+        const diff = draftValue - liveValue
+        if (diff === 0)
+            return "Live"
+
+        const prefix = diff > 0 ? "+" : ""
+        const suffix = unitLabel.length > 0 ? " " + unitLabel : ""
+        return prefix + diff + suffix + " pending"
+    }
+
+    function pendingCountText() {
+        if (session.pendingChangeCount === 0)
+            return "No pending changes"
+
+        return session.pendingChangeCount + (session.pendingChangeCount === 1
+            ? " pending change"
+            : " pending changes")
+    }
+
+    function draftStatusText() {
+        if (!session.draft.dirty)
+            return "Draft matches live settings."
+        if (session.draft.validationMessage.length > 0)
+            return session.draft.validationMessage
+        if (session.applyRestrictionReason.length > 0)
+            return session.applyRestrictionReason
+        if (session.applyEnabled)
+            return "Draft is valid and ready to apply."
+        return "Draft has unapplied changes."
+    }
 
     component FieldLabel : Label {
         color: "#94a3b8"
@@ -66,6 +110,108 @@ Page {
             && control.disabledReason.length > 0
         ToolTip.delay: 300
         ToolTip.text: control.disabledReason
+    }
+
+    component PresetButton : ActionButton {
+        property bool selected: false
+
+        fillColor: selected ? "#17304a" : "#111827"
+        hoverFillColor: selected ? "#214465" : "#172033"
+        downFillColor: selected ? "#11273d" : "#0d1422"
+        borderColor: selected ? "#78a6cb" : "#475569"
+        foregroundColor: selected ? "#f3f8fe" : "#dbe6f1"
+    }
+
+    component StatusPill : Rectangle {
+        id: pill
+
+        property string text: ""
+        property color fillColor: "#101926"
+        property color borderColor: "#334155"
+        property color foregroundColor: "#e5e7eb"
+
+        implicitHeight: 30
+        implicitWidth: Math.max(86, statusText.implicitWidth + 20)
+        radius: 15
+        color: fillColor
+        border.width: 1
+        border.color: borderColor
+
+        Text {
+            id: statusText
+            anchors.centerIn: parent
+            text: pill.text
+            color: pill.foregroundColor
+            font.pixelSize: 12
+            font.weight: Font.DemiBold
+            elide: Text.ElideRight
+        }
+    }
+
+    component SummaryTile : Item {
+        id: tile
+
+        required property string titleText
+        required property string valueText
+        property string noteText: ""
+        property color accentColor: "#8cc7f2"
+        property int accentWidth: 6
+        property int cornerRadius: 12
+
+        Layout.fillWidth: true
+        implicitHeight: noteText.length > 0 ? 110 : 90
+
+        Rectangle {
+            anchors.fill: parent
+            radius: tile.cornerRadius
+            color: tile.accentColor
+            opacity: 0.88
+        }
+
+        Rectangle {
+            id: tileSurface
+            anchors.fill: parent
+            anchors.leftMargin: tile.accentWidth
+            radius: tile.cornerRadius
+            color: "#0d1522"
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: tile.cornerRadius
+            color: "transparent"
+            border.width: 1
+            border.color: "#243447"
+        }
+
+        ColumnLayout {
+            anchors.fill: tileSurface
+            anchors.margins: 14
+            spacing: 6
+
+            FieldLabel {
+                text: tile.titleText
+                Layout.fillWidth: true
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: tile.valueText
+                color: "#f3f8fe"
+                font.pixelSize: 22
+                font.weight: Font.DemiBold
+                wrapMode: Text.Wrap
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: tile.noteText
+                visible: text.length > 0
+                color: "#9fb1c6"
+                font.pixelSize: 12
+                wrapMode: Text.Wrap
+            }
+        }
     }
 
     component StepperGlyph : Canvas {
@@ -263,6 +409,118 @@ Page {
         }
     }
 
+    component CompareRow : Rectangle {
+        id: rowCard
+
+        required property string labelText
+        required property string liveValueText
+        required property string statusText
+        required property bool changed
+        default property alias editorContent: editorSlot.data
+
+        implicitHeight: 76
+        radius: 12
+        color: changed ? "#101b2a" : "#0d1522"
+        border.width: 1
+        border.color: changed ? "#365978" : "#243447"
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: root.compareRowInnerMargin
+            spacing: root.compareColumnSpacing
+
+            ColumnLayout {
+                Layout.preferredWidth: root.compareParameterWidth
+                Layout.minimumWidth: root.compareParameterWidth
+                Layout.maximumWidth: root.compareParameterWidth
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 4
+
+                Label {
+                    text: rowCard.labelText
+                    color: "#f3f8fe"
+                    font.pixelSize: 15
+                    font.weight: Font.DemiBold
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                }
+
+                FieldLabel {
+                    text: rowCard.changed ? "Draft diverges from live value." : "Draft matches live value."
+                    Layout.fillWidth: true
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            ColumnLayout {
+                Layout.preferredWidth: root.compareLiveWidth
+                Layout.minimumWidth: root.compareLiveWidth
+                Layout.maximumWidth: root.compareLiveWidth
+                Layout.alignment: Qt.AlignVCenter
+
+                FieldLabel {
+                    text: "Live"
+                    visible: false
+                }
+
+                StatusPill {
+                    text: rowCard.liveValueText
+                    fillColor: "#0f172a"
+                    borderColor: "#334155"
+                    foregroundColor: "#dbe6f1"
+                    Layout.alignment: Qt.AlignHCenter
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            ColumnLayout {
+                Layout.preferredWidth: root.compareDraftWidth
+                Layout.minimumWidth: root.compareDraftWidth
+                Layout.maximumWidth: root.compareDraftWidth
+                Layout.alignment: Qt.AlignVCenter
+
+                FieldLabel {
+                    text: "Draft"
+                    visible: false
+                }
+
+                Item {
+                    id: editorSlot
+                    implicitWidth: childrenRect.width
+                    implicitHeight: childrenRect.height
+                    Layout.alignment: Qt.AlignHCenter
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            ColumnLayout {
+                Layout.alignment: Qt.AlignVCenter
+
+                FieldLabel {
+                    text: "Pending"
+                    visible: false
+                }
+
+                StatusPill {
+                    text: rowCard.statusText
+                    fillColor: rowCard.changed ? "#17304a" : "#101926"
+                    borderColor: rowCard.changed ? "#78a6cb" : "#334155"
+                    foregroundColor: rowCard.changed ? "#f3f8fe" : "#94a3b8"
+                    Layout.alignment: Qt.AlignRight
+                }
+            }
+        }
+    }
+
     background: Rectangle {
         color: "#0b1220"
         radius: root.pageCornerRadius
@@ -301,21 +559,183 @@ Page {
                     x: 16
                     y: 16
                     width: parent.width - 32
-                    height: parent.height - 32
                     spacing: 14
 
-                    RowLayout {
+                    Label {
                         Layout.fillWidth: true
-                        spacing: 12
+                        text: "Settings Profiles"
+                        color: "#f8fafc"
+                        font.pixelSize: 26
+                        font.weight: Font.Bold
+                    }
 
-                        FieldLabel {
-                            text: "Warning Temperature"
-                            Layout.preferredWidth: 180
-                            Layout.alignment: Qt.AlignVCenter
+                    Label {
+                        Layout.fillWidth: true
+                        text: "Load threshold presets, compare live values against your working draft, and apply only when the runtime policy allows it."
+                        color: "#9fb1c6"
+                        font.pixelSize: 13
+                        wrapMode: Text.Wrap
+                    }
+
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: settingsLayout.width >= 860 ? 3 : (settingsLayout.width >= 560 ? 2 : 1)
+                        rowSpacing: 12
+                        columnSpacing: 12
+
+                        SummaryTile {
+                            titleText: "Live Threshold Profile"
+                            valueText: session.committedThresholdPresetName
+                            noteText: "Applied thresholds currently driving warning and fault behavior."
+                            accentColor: "#38bdf8"
                         }
 
+                        SummaryTile {
+                            titleText: "Draft Threshold Profile"
+                            valueText: session.draftThresholdPresetName
+                            noteText: "Preset buttons only reshape threshold bands. Update interval stays manual."
+                            accentColor: "#22c55e"
+                        }
+
+                        SummaryTile {
+                            titleText: "Pending Changes"
+                            valueText: root.pendingCountText()
+                            noteText: root.draftStatusText()
+                            accentColor: session.pendingChangeCount > 0 ? "#f59e0b" : "#64748b"
+                        }
+                    }
+
+                    Rectangle {
+                        id: presetCard
+                        Layout.fillWidth: true
+                        implicitHeight: presetContent.implicitHeight + 28
+                        radius: 12
+                        color: "#0d1522"
+                        border.width: 1
+                        border.color: "#243447"
+                        clip: true
+
+                        ColumnLayout {
+                            id: presetContent
+                            x: 14
+                            y: 14
+                            width: parent.width - 28
+                            spacing: 12
+
+                            RowLayout {
+                                Layout.fillWidth: true
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 4
+
+                                    Label {
+                                        text: "Threshold Presets"
+                                        color: "#f3f8fe"
+                                        font.pixelSize: 16
+                                        font.weight: Font.DemiBold
+                                    }
+
+                                    FieldLabel {
+                                        Layout.fillWidth: true
+                                        text: "Presets update only the threshold bands. Use Factory Defaults below to reset the entire settings block."
+                                        wrapMode: Text.Wrap
+                                    }
+                                }
+                            }
+
+                            Flow {
+                                Layout.fillWidth: true
+                                spacing: 10
+
+                                PresetButton {
+                                    text: "Conservative"
+                                    selected: session.draftThresholdPresetName === "Conservative"
+                                    onClicked: session.loadConservativePreset()
+                                }
+
+                                PresetButton {
+                                    text: "Balanced"
+                                    selected: session.draftThresholdPresetName === "Balanced"
+                                    onClicked: session.loadBalancedPreset()
+                                }
+
+                                PresetButton {
+                                    text: "Aggressive"
+                                    selected: session.draftThresholdPresetName === "Aggressive"
+                                    onClicked: session.loadAggressivePreset()
+                                }
+                            }
+                        }
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.topMargin: 6
+                        implicitHeight: compareHeaderLayout.implicitHeight
+
+                        RowLayout {
+                            id: compareHeaderLayout
+                            anchors.fill: parent
+                            anchors.leftMargin: root.compareRowInnerMargin
+                            anchors.rightMargin: root.compareRowInnerMargin
+                            spacing: root.compareColumnSpacing
+
+                            FieldLabel {
+                                text: "Parameter"
+                                Layout.preferredWidth: root.compareParameterWidth
+                                Layout.minimumWidth: root.compareParameterWidth
+                                Layout.maximumWidth: root.compareParameterWidth
+                            }
+
+                            Item {
+                                Layout.fillWidth: true
+                            }
+
+                            Item {
+                                Layout.preferredWidth: root.compareLiveWidth
+                                Layout.minimumWidth: root.compareLiveWidth
+                                Layout.maximumWidth: root.compareLiveWidth
+
+                                FieldLabel {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: "Live"
+                                }
+                            }
+
+                            Item {
+                                Layout.fillWidth: true
+                            }
+
+                            Item {
+                                Layout.preferredWidth: root.compareDraftWidth
+                                Layout.minimumWidth: root.compareDraftWidth
+                                Layout.maximumWidth: root.compareDraftWidth
+
+                                FieldLabel {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: "Draft"
+                                }
+                            }
+
+                            Item {
+                                Layout.fillWidth: true
+                            }
+
+                            FieldLabel {
+                                text: "Pending"
+                            }
+                        }
+                    }
+
+                    CompareRow {
+                        Layout.fillWidth: true
+                        labelText: "Warning Temperature"
+                        liveValueText: root.formatSettingValue(session.committedWarningTemperature, "")
+                        statusText: root.pendingDeltaText(session.committedWarningTemperature, session.draft.warningTemperature, "")
+                        changed: root.hasPendingDelta(session.committedWarningTemperature, session.draft.warningTemperature)
+
                         StyledSpinBox {
-                            Layout.alignment: Qt.AlignVCenter
                             from: 0
                             to: 199
                             value: session.draft.warningTemperature
@@ -323,18 +743,14 @@ Page {
                         }
                     }
 
-                    RowLayout {
+                    CompareRow {
                         Layout.fillWidth: true
-                        spacing: 12
-
-                        FieldLabel {
-                            text: "Fault Temperature"
-                            Layout.preferredWidth: 180
-                            Layout.alignment: Qt.AlignVCenter
-                        }
+                        labelText: "Fault Temperature"
+                        liveValueText: root.formatSettingValue(session.committedFaultTemperature, "")
+                        statusText: root.pendingDeltaText(session.committedFaultTemperature, session.draft.faultTemperature, "")
+                        changed: root.hasPendingDelta(session.committedFaultTemperature, session.draft.faultTemperature)
 
                         StyledSpinBox {
-                            Layout.alignment: Qt.AlignVCenter
                             from: 1
                             to: 200
                             value: session.draft.faultTemperature
@@ -342,18 +758,14 @@ Page {
                         }
                     }
 
-                    RowLayout {
+                    CompareRow {
                         Layout.fillWidth: true
-                        spacing: 12
-
-                        FieldLabel {
-                            text: "Warning Pressure"
-                            Layout.preferredWidth: 180
-                            Layout.alignment: Qt.AlignVCenter
-                        }
+                        labelText: "Warning Pressure"
+                        liveValueText: root.formatSettingValue(session.committedWarningPressure, "")
+                        statusText: root.pendingDeltaText(session.committedWarningPressure, session.draft.warningPressure, "")
+                        changed: root.hasPendingDelta(session.committedWarningPressure, session.draft.warningPressure)
 
                         StyledSpinBox {
-                            Layout.alignment: Qt.AlignVCenter
                             from: 0
                             to: 149
                             value: session.draft.warningPressure
@@ -361,18 +773,14 @@ Page {
                         }
                     }
 
-                    RowLayout {
+                    CompareRow {
                         Layout.fillWidth: true
-                        spacing: 12
-
-                        FieldLabel {
-                            text: "Fault Pressure"
-                            Layout.preferredWidth: 180
-                            Layout.alignment: Qt.AlignVCenter
-                        }
+                        labelText: "Fault Pressure"
+                        liveValueText: root.formatSettingValue(session.committedFaultPressure, "")
+                        statusText: root.pendingDeltaText(session.committedFaultPressure, session.draft.faultPressure, "")
+                        changed: root.hasPendingDelta(session.committedFaultPressure, session.draft.faultPressure)
 
                         StyledSpinBox {
-                            Layout.alignment: Qt.AlignVCenter
                             from: 1
                             to: 150
                             value: session.draft.faultPressure
@@ -380,18 +788,14 @@ Page {
                         }
                     }
 
-                    RowLayout {
+                    CompareRow {
                         Layout.fillWidth: true
-                        spacing: 12
-
-                        FieldLabel {
-                            text: "Update Interval (ms)"
-                            Layout.preferredWidth: 180
-                            Layout.alignment: Qt.AlignVCenter
-                        }
+                        labelText: "Update Interval (ms)"
+                        liveValueText: root.formatSettingValue(session.committedUpdateIntervalMs, "ms")
+                        statusText: root.pendingDeltaText(session.committedUpdateIntervalMs, session.draft.updateIntervalMs, "ms")
+                        changed: root.hasPendingDelta(session.committedUpdateIntervalMs, session.draft.updateIntervalMs)
 
                         StyledSpinBox {
-                            Layout.alignment: Qt.AlignVCenter
                             from: 100
                             to: 5000
                             stepSize: 100
@@ -432,7 +836,7 @@ Page {
                         }
 
                         ActionButton {
-                            text: "Defaults"
+                            text: "Factory Defaults"
                             borderColor: "#8b6b2f"
                             foregroundColor: "#e3cf9b"
                             onClicked: session.draft.resetDraftToDefaults()
@@ -462,7 +866,7 @@ Page {
                     Label {
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignRight
-                        text: session.draft.dirty ? "Draft has unapplied changes." : "Draft matches committed settings."
+                        text: root.draftStatusText()
                         color: session.draft.dirty ? "#93c5fd" : "#6b7280"
                         horizontalAlignment: Text.AlignRight
                         wrapMode: Text.Wrap

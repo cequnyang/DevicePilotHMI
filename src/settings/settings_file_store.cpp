@@ -17,14 +17,14 @@ QString Settings::Store::configFilePath()
     return dir + "/devicepilothmi_settings.json";
 }
 
-Settings::Store::PersistResult Settings::Store::persistSnapshot(const Snapshot &snapshot)
+Settings::Store::PersistResult Settings::Store::persistConfig(const PersistedConfig &config)
 {
     QSaveFile file(configFilePath());
     if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
         return {false, file.errorString()};
     }
 
-    if (file.write(Settings::JsonCodec::encodeSnapshot(snapshot)) == -1) {
+    if (file.write(Settings::JsonCodec::encodeConfig(config)) == -1) {
         file.cancelWriting();
         return {false, file.errorString()};
     }
@@ -36,17 +36,17 @@ Settings::Store::PersistResult Settings::Store::persistSnapshot(const Snapshot &
     return {true, {}};
 }
 
-Settings::Store::LoadResult Settings::Store::loadSnapshot()
+Settings::Store::LoadResult Settings::Store::loadConfig()
 {
     const QString path = configFilePath();
     QFile file(path);
 
     if (!file.exists()) {
-        return {Settings::defaults(), true, "settings.json does not exist. Using defaults."};
+        return {Settings::defaultsConfig(), true, "settings.json does not exist. Using defaults."};
     }
 
     if (!file.open(QIODevice::ReadOnly)) {
-        return {Settings::defaults(),
+        return {Settings::defaultsConfig(),
                 true,
                 QString("Failed to open settings.json (%1). Using defaults.")
                     .arg(file.errorString())};
@@ -55,19 +55,19 @@ Settings::Store::LoadResult Settings::Store::loadSnapshot()
     const QByteArray raw = file.readAll();
     file.close();
 
-    const auto [codec, loaded, decodeReason] = Settings::JsonCodec::decodeSnapshot(raw);
+    const auto [codec, loaded, repaired, decodeReason] = Settings::JsonCodec::decodeConfig(raw);
     if (!codec) {
-        return {Settings::defaults(),
+        return {Settings::defaultsConfig(),
                 true,
                 QString("Invalid settings.json structure (%1). Using defaults.").arg(decodeReason)};
     }
 
-    const auto [validation, validationReason] = Settings::validateSnapshot(loaded);
+    const auto [validation, validationReason] = Settings::validateSnapshot(loaded.snapshot);
     if (!validation) {
-        return {Settings::defaults(),
+        return {Settings::defaultsConfig(),
                 true,
                 QString("Invalid settings values (%1). Using defaults.").arg(validationReason)};
     }
 
-    return {loaded, false, {}};
+    return {loaded, repaired, decodeReason};
 }

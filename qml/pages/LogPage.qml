@@ -8,6 +8,7 @@ Page {
 
     required property var logModel
     required property var filteredLogModel
+    required property var settingsManager
     property int pageCornerRadius: 18
     clip: true
 
@@ -329,6 +330,86 @@ Page {
         }
     }
 
+    component PopupToggleButton : AbstractButton {
+        id: control
+
+        property string label: ""
+        property bool popupOpen: false
+        readonly property color fillColor: pressed || popupOpen
+            ? "#0d1422"
+            : (hovered ? "#172033" : "#111827")
+        readonly property color frameColor: popupOpen ? "#5f84a4" : "#475569"
+
+        implicitWidth: Math.max(96, labelText.implicitWidth + 34)
+        implicitHeight: 32
+        hoverEnabled: true
+        focusPolicy: Qt.NoFocus
+        padding: 0
+
+        background: Rectangle {
+            radius: 10
+            color: control.fillColor
+            border.width: 1
+            border.color: control.frameColor
+        }
+
+        contentItem: Item {
+            anchors.fill: parent
+
+            Text {
+                id: labelText
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: parent.left
+                anchors.leftMargin: 12
+                text: control.label
+                color: "#e5e7eb"
+                font.pixelSize: 13
+                font.weight: Font.DemiBold
+                elide: Text.ElideRight
+            }
+
+            Item {
+                id: chevronWrap
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.right: parent.right
+                anchors.rightMargin: 12
+                width: 10
+                height: 8
+
+                transform: Rotation {
+                    origin.x: chevronWrap.width / 2
+                    origin.y: chevronWrap.height / 2
+                    angle: control.popupOpen ? 180 : 0
+
+                    Behavior on angle {
+                        NumberAnimation {
+                            duration: 140
+                            easing.type: Easing.InOutQuad
+                        }
+                    }
+                }
+
+                Canvas {
+                    anchors.fill: parent
+                    contextType: "2d"
+
+                    onPaint: {
+                        const ctx = getContext("2d")
+                        ctx.reset()
+                        ctx.strokeStyle = "#94a3b8"
+                        ctx.lineWidth = 1.6
+                        ctx.lineCap = "round"
+                        ctx.beginPath()
+                        ctx.moveTo(1, 1)
+                        ctx.lineTo(width / 2, height - 1)
+                        ctx.lineTo(width - 1, 1)
+                        ctx.stroke()
+                    }
+                }
+            }
+        }
+    }
+
     component ElidedToolTipLabel : Label {
         id: control
 
@@ -452,6 +533,92 @@ Page {
                         labelColor: "#e5e7eb"
                     }
 
+                    PopupToggleButton {
+                        id: columnsButton
+                        label: "Columns"
+                        popupOpen: columnsPopup.visible
+                        Layout.alignment: Qt.AlignVCenter
+
+                        onClicked: {
+                            if (columnsPopup.visible)
+                                columnsPopup.close()
+                            else
+                                columnsPopup.open()
+                        }
+
+                        Popup {
+                            id: columnsPopup
+                            x: Math.max(0, columnsButton.width - width)
+                            y: columnsButton.height + 6
+                            width: 176
+                            padding: 10
+                            modal: false
+                            focus: true
+                            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+                            background: Rectangle {
+                                radius: 12
+                                color: "#0f172a"
+                                border.width: 1
+                                border.color: "#314056"
+                            }
+
+                            contentItem: Column {
+                                spacing: 10
+
+                                Label {
+                                    text: "Visible columns"
+                                    color: "#94a3b8"
+                                    font.pixelSize: 12
+                                    font.weight: Font.Medium
+                                }
+
+                                Column {
+                                    spacing: 8
+
+                                    LogCheckBox {
+                                        id: timestampVisibilityCheck
+                                        text: "Timestamp"
+                                        labelColor: "#e5e7eb"
+                                        onToggled: root.settingsManager.showTimestamp = checked
+                                    }
+
+                                    Binding {
+                                        target: timestampVisibilityCheck
+                                        property: "checked"
+                                        value: root.settingsManager.showTimestamp
+                                    }
+
+                                    LogCheckBox {
+                                        id: sourceVisibilityCheck
+                                        text: "Source"
+                                        labelColor: "#e5e7eb"
+                                        onToggled: root.settingsManager.showSource = checked
+                                    }
+
+                                    Binding {
+                                        target: sourceVisibilityCheck
+                                        property: "checked"
+                                        value: root.settingsManager.showSource
+                                    }
+
+                                    LogCheckBox {
+                                        id: levelVisibilityCheck
+                                        text: "Level"
+                                        labelColor: "#e5e7eb"
+                                        onToggled: root.settingsManager.showLevel = checked
+                                    }
+
+                                    Binding {
+                                        target: levelVisibilityCheck
+                                        property: "checked"
+                                        value: root.settingsManager.showLevel
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     SortOrderButton {
                         id: sortOrderButton
                         newestFirst: root.newestFirst
@@ -519,7 +686,10 @@ Page {
                             text: timestamp
                             color: "#9ca3af"
                             font.pixelSize: 12
-                            Layout.preferredWidth: 90
+                            visible: root.settingsManager.showTimestamp
+                            Layout.preferredWidth: root.settingsManager.showTimestamp ? 90 : 0
+                            Layout.minimumWidth: 0
+                            Layout.maximumWidth: root.settingsManager.showTimestamp ? 90 : 0
                         }
 
                         Rectangle {
@@ -528,15 +698,30 @@ Page {
                             border.width: 2
                             border.color: root.sourceColor(source)
                             implicitWidth: sourceLabel.implicitWidth + 16
-                            implicitHeight: sourceLabel.implicitHeight + 6
+                            implicitHeight: 26
+                            visible: root.settingsManager.showSource
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.preferredWidth: root.settingsManager.showSource
+                                ? implicitWidth
+                                : 0
+                            Layout.minimumWidth: 0
+                            Layout.maximumWidth: root.settingsManager.showSource
+                                ? implicitWidth
+                                : 0
 
-                            Label {
+                            Text {
                                 id: sourceLabel
-                                anchors.centerIn: parent
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                anchors.rightMargin: 8
+                                anchors.topMargin: -2
+                                anchors.bottomMargin: 2
                                 text: source
                                 color: parent.border.color
                                 font.pixelSize: 12
                                 font.weight: Font.DemiBold
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
                             }
                         }
 
@@ -547,7 +732,10 @@ Page {
                                   : level === "CONFIG" ? "#34d399"
                                   : "#93c5fd"
                             font.bold: true
-                            Layout.preferredWidth: 78
+                            visible: root.settingsManager.showLevel
+                            Layout.preferredWidth: root.settingsManager.showLevel ? 78 : 0
+                            Layout.minimumWidth: 0
+                            Layout.maximumWidth: root.settingsManager.showLevel ? 78 : 0
                         }
 
                         ColumnLayout {

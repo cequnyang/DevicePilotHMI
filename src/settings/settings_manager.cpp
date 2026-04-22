@@ -54,6 +54,89 @@ const Snapshot &SettingsManager::snapshot() const
     return m_snapshot;
 }
 
+bool SettingsManager::showTimestamp() const
+{
+    return m_logViewPreferences.showTimestamp;
+}
+
+bool SettingsManager::showSource() const
+{
+    return m_logViewPreferences.showSource;
+}
+
+bool SettingsManager::showLevel() const
+{
+    return m_logViewPreferences.showLevel;
+}
+
+void SettingsManager::setShowTimestamp(bool value)
+{
+    if (m_logViewPreferences.showTimestamp == value) {
+        return;
+    }
+
+    Settings::LogViewPreferences candidate = m_logViewPreferences;
+    candidate.showTimestamp = value;
+
+    const auto [persist, persistReason] = persistConfiguration(m_snapshot, candidate);
+    if (!persist) {
+        appendLog(makePersistenceEvent(
+            "CONFIG",
+            "persistence.log_view.persist.failed",
+            QString("Failed to persist log column visibility for timestamp (%1)")
+                .arg(persistReason)));
+        return;
+    }
+
+    m_logViewPreferences = candidate;
+    emit showTimestampChanged();
+}
+
+void SettingsManager::setShowSource(bool value)
+{
+    if (m_logViewPreferences.showSource == value) {
+        return;
+    }
+
+    Settings::LogViewPreferences candidate = m_logViewPreferences;
+    candidate.showSource = value;
+
+    const auto [persist, persistReason] = persistConfiguration(m_snapshot, candidate);
+    if (!persist) {
+        appendLog(makePersistenceEvent(
+            "CONFIG",
+            "persistence.log_view.persist.failed",
+            QString("Failed to persist log column visibility for source (%1)")
+                .arg(persistReason)));
+        return;
+    }
+
+    m_logViewPreferences = candidate;
+    emit showSourceChanged();
+}
+
+void SettingsManager::setShowLevel(bool value)
+{
+    if (m_logViewPreferences.showLevel == value) {
+        return;
+    }
+
+    Settings::LogViewPreferences candidate = m_logViewPreferences;
+    candidate.showLevel = value;
+
+    const auto [persist, persistReason] = persistConfiguration(m_snapshot, candidate);
+    if (!persist) {
+        appendLog(makePersistenceEvent(
+            "CONFIG",
+            "persistence.log_view.persist.failed",
+            QString("Failed to persist log column visibility for level (%1)").arg(persistReason)));
+        return;
+    }
+
+    m_logViewPreferences = candidate;
+    emit showLevelChanged();
+}
+
 SettingsManager::ApplyResult SettingsManager::applySnapshot(const Snapshot &candidate)
 {
     const auto [validation, validationReason] = Settings::validateSnapshot(candidate);
@@ -69,12 +152,12 @@ SettingsManager::ApplyResult SettingsManager::applySnapshot(const Snapshot &cand
         return {true, {}};
     }
 
-    const auto [persist, persistReason] = Settings::Store::persistSnapshot(candidate);
+    const auto [persist, persistReason] = persistConfiguration(candidate, m_logViewPreferences);
     if (!persist) {
         appendLog(makePersistenceEvent(
             "CONFIG",
             "persistence.persist.failed",
-            QString("Failed to persist settings snapshot (%1)").arg(persistReason)));
+            QString("Failed to persist settings configuration (%1)").arg(persistReason)));
         return {false, persistReason};
     }
 
@@ -86,22 +169,24 @@ SettingsManager::ApplyResult SettingsManager::applySnapshot(const Snapshot &cand
 
 void SettingsManager::load()
 {
-    const auto [loaded, repaired, loadReason] = Settings::Store::loadSnapshot();
+    const auto [loaded, repaired, loadReason] = Settings::Store::loadConfig();
 
-    m_snapshot = loaded;
+    m_snapshot = loaded.snapshot;
+    m_logViewPreferences = loaded.logViewPreferences;
     if (!repaired) {
-        appendLog(makePersistenceEvent("INFO",
-                                       "persistence.load.succeeded",
-                                       "Settings snapshot loaded from settings.json."));
+        appendLog(makePersistenceEvent(
+            "INFO",
+            "persistence.load.succeeded",
+            "Settings configuration loaded from settings.json."));
         return;
     }
 
-    const auto [persist, persistReason] = Settings::Store::persistSnapshot(m_snapshot);
+    const auto [persist, persistReason] = persistConfiguration(m_snapshot, m_logViewPreferences);
     if (!persist) {
         appendLog(makePersistenceEvent(
             "CONFIG",
             "persistence.repair.failed",
-            QString("Recovered settings snapshot but failed to rewrite settings.json (%1)")
+            QString("Recovered settings configuration but failed to rewrite settings.json (%1)")
                 .arg(persistReason)));
         return;
     }
@@ -110,8 +195,9 @@ void SettingsManager::load()
         "CONFIG",
         "persistence.load.repaired",
         loadReason.isEmpty()
-            ? "Settings snapshot was repaired and rewritten."
-            : QString("Settings snapshot was repaired and rewritten (%1)").arg(loadReason)));
+            ? "Settings configuration was repaired and rewritten."
+            : QString("Settings configuration was repaired and rewritten (%1)")
+                  .arg(loadReason)));
 }
 
 void SettingsManager::emitSnapshotChanges(const Snapshot &oldSnapshot, const Snapshot &newSnapshot)
@@ -166,6 +252,13 @@ void SettingsManager::emitSnapshotChanges(const Snapshot &oldSnapshot, const Sna
     if (updateIntervalChanged) {
         emit updateIntervalMsChanged();
     }
+}
+
+Settings::Store::PersistResult SettingsManager::persistConfiguration(
+    const Snapshot &snapshot,
+    const Settings::LogViewPreferences &prefs)
+{
+    return Settings::Store::persistConfig(Settings::PersistedConfig{snapshot, prefs});
 }
 
 void SettingsManager::appendLog(const LogEvent &event)

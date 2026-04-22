@@ -1,8 +1,10 @@
 #include <QCoreApplication>
 #include <QGuiApplication>
+#include <QIcon>
 #include <QQuickStyle>
 #include <QQmlApplicationEngine>
 #include <QVariant>
+#include <QWindow>
 #include <qqml.h>
 
 #include "alarm/alarm_manager.h"
@@ -42,6 +44,24 @@ int main(int argc, char *argv[])
     SettingsApplyService settingsApplyService(logInterface, settingsManager, machineRuntime);
     SettingsSession settingsSession(logInterface, settingsManager, settingsApplyService);
 
+    const auto updateWindowIcon = [&app, &alarmManager]() {
+        QString iconPath = QStringLiteral(":/icons/app_icon_normal.png");
+        if (alarmManager.isFault()) {
+            iconPath = QStringLiteral(":/icons/app_icon_fault.png");
+        } else if (alarmManager.hasWarning()) {
+            iconPath = QStringLiteral(":/icons/app_icon_warning.png");
+        }
+        const QIcon icon(iconPath);
+        app.setWindowIcon(icon);
+        for (QWindow *window : app.topLevelWindows()) {
+            if (window != nullptr) {
+                window->setIcon(icon);
+            }
+        }
+    };
+    updateWindowIcon();
+    QObject::connect(&alarmManager, &AlarmManager::alarmChanged, &app, updateWindowIcon);
+
     QQmlApplicationEngine engine;
     LogFilterProxyModel filteredLogModel;
     filteredLogModel.setSourceLogModel(&logModel);
@@ -58,6 +78,7 @@ int main(int argc, char *argv[])
                                  {"alarm", QVariant::fromValue(&alarmManager)},
                                  {"logModel", QVariant::fromValue(&logModel)},
                                  {"filteredLogModel", QVariant::fromValue(&filteredLogModel)},
+                                 {"settingsManager", QVariant::fromValue(&settingsManager)},
                                  {"settingsSession", QVariant::fromValue(&settingsSession)}});
 
     engine.loadFromModule("DevicePilotHMI", "Main");
