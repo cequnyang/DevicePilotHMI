@@ -14,10 +14,11 @@ ApplicationWindow {
     required property var alarm
     required property var logModel
     required property var filteredLogModel
+    required property var settingsManager
     required property var settingsSession
 
     width: 1100
-    minimumWidth: 750
+    minimumWidth: 800
     height: 760
     minimumHeight: 420
     visible: true
@@ -39,9 +40,7 @@ ApplicationWindow {
     readonly property color deviceStatusBorderColor: root.alarm.isFault
         ? "#7f1d1d"
         : (root.alarm.hasWarning ? "#92400e" : "#2d6a4f")
-    readonly property string deviceStatusLabel: root.alarm.isFault
-        ? "Fault"
-        : (root.alarm.hasWarning ? "Warning" : "Normal")
+    readonly property string deviceStatusLabel: root.alarm.stateLabel
     property var scenarioOptions: [
         { label: "Normal Ramp", scenario: SimulationScenario.NormalRamp },
         { label: "Overload", scenario: SimulationScenario.Overload },
@@ -402,9 +401,13 @@ ApplicationWindow {
                             Layout.preferredWidth: root.headerBannerPreferredWidth
                             Layout.maximumWidth: root.headerBannerPreferredWidth
                             embedded: true
-                            alarmText: root.alarm.alarmText
+                            headline: root.alarm.headline
+                            detail: root.alarm.detail
+                            operatorHint: root.alarm.operatorHint
+                            stateLabel: root.alarm.stateLabel
                             hasWarning: root.alarm.hasWarning
                             isFault: root.alarm.isFault
+                            recoveryActive: root.alarm.recoveryActive
                         }
 
                         Label {
@@ -485,6 +488,7 @@ ApplicationWindow {
             Pages.LogPage {
                 logModel: root.logModel
                 filteredLogModel: root.filteredLogModel
+                settingsManager: root.settingsManager
                 pageCornerRadius: root.windowCornerRadius
             }
 

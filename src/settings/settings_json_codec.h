@@ -6,19 +6,20 @@
 #include "settings/settings_defined.h"
 
 namespace Settings::JsonCodec {
-using Settings::Snapshot;
+using Settings::PersistedConfig;
 
 struct DecodeResult
 {
     bool ok{false};
-    Snapshot snapshot{};
+    PersistedConfig config{};
+    bool repaired{false};
     QString reason;
 };
 
 inline constexpr int kSchemaVersion{1};
-QJsonObject snapshotToJson(const Snapshot &snapshot);
-DecodeResult jsonToSnapshot(const QJsonObject &obj);
+QJsonObject configToJson(const PersistedConfig &config);
+DecodeResult jsonToConfig(const QJsonObject &obj);
 
-QByteArray encodeSnapshot(const Snapshot &snapshot);
-DecodeResult decodeSnapshot(const QByteArray &raw);
+QByteArray encodeConfig(const PersistedConfig &config);
+DecodeResult decodeConfig(const QByteArray &raw);
 } // namespace Settings::JsonCodec

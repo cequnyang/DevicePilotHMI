@@ -62,10 +62,8 @@ void SimulatedMachineBackend::requestResetFault()
 
     m_updateTimer.stop();
     m_transitionTimer.stop();
-    m_pendingTransition = PendingTransition::None;
-    resetTelemetryToIdle();
-    publishTelemetry();
-    setState(MachineState::Idle);
+    m_pendingTransition = PendingTransition::CompleteFaultReset;
+    m_transitionTimer.start(700);
 }
 
 void SimulatedMachineBackend::requestSafeShutdown()
@@ -144,6 +142,13 @@ void SimulatedMachineBackend::onTransitionTimeout()
     case PendingTransition::FinishStop:
         m_pendingTransition = PendingTransition::None;
         m_updateTimer.stop();
+        resetTelemetryToIdle();
+        publishTelemetry();
+        setState(MachineState::Idle);
+        break;
+
+    case PendingTransition::CompleteFaultReset:
+        m_pendingTransition = PendingTransition::None;
         resetTelemetryToIdle();
         publishTelemetry();
         setState(MachineState::Idle);

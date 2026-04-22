@@ -1,5 +1,6 @@
 #include "runtime/machine_runtime.h"
 
+#include <QAbstractEventDispatcher>
 #include <QMetaType>
 #include <algorithm>
 #include <chrono>
@@ -25,7 +26,9 @@ MachineRuntime::MachineRuntime(LogInterface &logInterface,
 
     m_stateContextTimer.setInterval(1000);
     connect(&m_stateContextTimer, &QTimer::timeout, this, [this]() { emit stateContextChanged(); });
-    m_stateContextTimer.start();
+    if (QAbstractEventDispatcher::instance(thread()) != nullptr) {
+        m_stateContextTimer.start();
+    }
 
     connect(m_backend,
             &MachineBackend::telemetryReceived,
@@ -67,7 +70,12 @@ bool MachineRuntime::canStop() const
 
 bool MachineRuntime::canResetFault() const
 {
-    return m_state == State::Fault;
+    return m_state == State::Fault && !m_faultResetPending;
+}
+
+bool MachineRuntime::faultResetPending() const
+{
+    return m_faultResetPending;
 }
 
 QString MachineRuntime::startDisabledReason() const
@@ -115,6 +123,10 @@ QString MachineRuntime::resetDisabledReason() const
 {
     if (canResetFault()) {
         return "";
+    }
+
+    if (m_state == State::Fault && m_faultResetPending) {
+        return "Fault reset already in progress.";
     }
 
     return "Reset Fault is available only in Fault state.";
@@ -235,6 +247,8 @@ void MachineRuntime::resetFault()
     });
     recordHistoryMarker("reset", "Reset", "#a78bfa");
     m_faultResetPending = true;
+    emit stateChanged();
+    emit faultResetRequested();
     m_backend->requestResetFault();
 }
 
@@ -308,6 +322,9 @@ void MachineRuntime::onStateReported(MachineState state)
 
     const State previousState = m_state;
     m_state = state;
+    if (m_state == State::Fault || (previousState == State::Fault && m_state == State::Idle)) {
+        m_faultResetPending = false;
+    }
 
     appendLog(LogEvent{
         .level = "INFO",
@@ -322,10 +339,6 @@ void MachineRuntime::onStateReported(MachineState state)
     emit stateChanged();
     emit stateContextChanged();
 
-    if (m_state == State::Fault) {
-        m_faultResetPending = false;
-    }
-
     if (previousState == State::Starting && m_state == State::Running) {
         recordHistoryMarker("running", "Running", "#38bdf8");
         emit evaluateAlarm();
@@ -334,12 +347,12 @@ void MachineRuntime::onStateReported(MachineState state)
 
     if (previousState == State::Stopping && m_state == State::Idle) {
         recordHistoryMarker("idle", "Idle", "#cbd5e1");
+        emit evaluateAlarm();
         emit resetAlarmState();
         return;
     }
 
     if (previousState == State::Fault && m_state == State::Idle) {
-        m_faultResetPending = false;
         appendLog(LogEvent{
             .level = "INFO",
             .source = "runtime",
@@ -347,7 +360,7 @@ void MachineRuntime::onStateReported(MachineState state)
             .message = "Fault reset completed",
         });
         recordHistoryMarker("idle", "Idle", "#cbd5e1");
-        emit resetAlarmState();
+        emit faultResetCompleted();
     }
 }
 

@@ -4,7 +4,7 @@
 #include "settings/settings_defined.h"
 
 namespace Settings::Store {
-using Settings::Snapshot;
+using Settings::PersistedConfig;
 
 struct PersistResult
 {
@@ -15,12 +15,12 @@ struct PersistResult
 };
 struct LoadResult
 {
-    Snapshot snapshot{};
+    PersistedConfig config{};
     bool repaired{false};
     QString reason;
 };
 
 QString configFilePath();
-PersistResult persistSnapshot(const Snapshot &snapshot);
-LoadResult loadSnapshot();
+PersistResult persistConfig(const PersistedConfig &config);
+LoadResult loadConfig();
 } // namespace Settings::Store

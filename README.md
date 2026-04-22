@@ -6,21 +6,24 @@ The project focuses on:
 
 - a simulated runtime state machine
 - a backend interface that keeps the application layer separate from the simulator implementation
-- threshold-based alarm handling
-- an event log with filtering and acknowledgment
-- editable, validated, and persisted settings
+- a threshold-based warning/fault lifecycle with reset and recovery presentation
+- an event log with filtering, acknowledgment, and persisted column visibility
+- editable, validated, preset-driven, and persisted settings
 - a cleaner C++/QML integration boundary than a typical all-in-QML demo
 
 ## Highlights
 
-- Dashboard page with live machine telemetry, machine state, alarm banner, and control actions
-- Event log page with level filter, text search, and "only unacknowledged" filtering
-- Settings page with draft editing, validation, apply/revert/defaults flow, and JSON persistence
+- Dashboard page with live telemetry, trend charts, per-metric status cards, machine state context, and control actions
+- Alarm banner with structured copy (`headline`, `detail`, `operatorHint`, `stateLabel`) instead of one generic text string
+- Alarm lifecycle states for `Normal`, `WarningActive`, `FaultLatched`, `ResetRequested`, and `RecoveryNotice`
+- Event log page with level filter, text search, "only unacknowledged" filtering, and persisted column visibility
+- Settings page with threshold presets (`Conservative`, `Balanced`, `Aggressive`), draft editing, validation, apply/reload/factory defaults flow, and JSON persistence
 - Runtime-aware settings policy:
   - all changes are allowed while the machine is idle
   - threshold changes are allowed while running
   - update interval changes are blocked while running
   - settings are blocked during starting, stopping, and fault states
+- Applying threshold changes reevaluates the current telemetry immediately against the committed snapshot
 - Settings are automatically loaded from disk, validated, and repaired to defaults if the file is missing or invalid
 
 ## Tech Stack
@@ -38,14 +41,17 @@ The app is split into three top-level pages:
 
 - `Dashboard`
   - shows temperature, pressure, speed, machine status, and alarm state
+  - renders trend charts with warning/fault threshold overlays and history markers
+  - keeps a primary alarm focus through `activeMetric` while still showing live per-metric warning/fault state on the cards
   - allows `Start`, `Stop`, and `Reset Fault`
 - `Event Log`
   - shows runtime, config, warning, and fault events
-  - supports filtering and acknowledgment
+  - supports filtering, acknowledgment, and column visibility preferences
 - `Settings`
   - edits warning/fault thresholds and update interval
+  - supports `Conservative`, `Balanced`, and `Aggressive` threshold presets
   - validates input before applying
-  - persists committed settings to a JSON file
+  - persists committed settings and log view preferences to JSON
 
 ## Runtime Behavior
 
@@ -71,30 +77,48 @@ The machine starts in `Idle`.
 
 - `Normal`
   - banner text: `System normal`
-- `Warning`
-  - raised when warning thresholds are exceeded
-- `Fault`
+- `WarningActive`
+  - raised when warning thresholds are exceeded while the machine is still running
+  - exposes the active metric, threshold detail, trend direction, and operator hint
+- `FaultLatched`
   - raised when fault thresholds are exceeded
   - forces the runtime into fault state and requests a backend safe shutdown
+- `ResetRequested`
+  - entered after the operator requests `Reset Fault` and before the backend reports `Idle`
+- `RecoveryNotice`
+  - shown briefly after fault reset completes and the machine returns to `Idle`
 
-Current alarm evaluation is threshold-based and uses the current committed settings snapshot.
+Current alarm evaluation is threshold-based and uses the committed settings snapshot. Threshold applies performed while the machine is running trigger immediate reevaluation against current telemetry, so newly crossed thresholds can raise warning or fault state without waiting for a later sample.
+
+The dashboard banner is driven by structured alarm presentation fields:
+
+- `headline`
+- `detail`
+- `operatorHint`
+- `stateLabel`
+- `lifecycleState`
+- `activeMetric`
+
+For a deeper description of the lifecycle intent, see [docs/alarm-lifecycle-spec.md](docs/alarm-lifecycle-spec.md).
 
 ## Settings Model
 
 The settings flow is intentionally split into separate responsibilities:
 
 - `SettingsManager`
-  - owns the committed settings snapshot
+  - owns the committed settings snapshot and persisted log page view preferences
   - loads and persists settings
   - emits change signals for threshold changes and update interval changes
 - `SettingsDraft`
   - owns editable form state used by the settings page
   - tracks validation and dirty state
+- `Settings::Presets`
+  - defines the threshold preset values for `Conservative`, `Balanced`, and `Aggressive`
 - `SettingsApplyService`
   - decides whether a draft can be applied in the current runtime state
 - `SettingsSession`
   - is the QML-facing page session object
-  - exposes the draft and apply-related UI state
+  - exposes the draft, preset names, pending change count, and apply-related UI state
 
 Validation rules include:
 
@@ -107,6 +131,13 @@ Validation rules include:
 
 Settings are stored as JSON in the platform application config directory.
 
+The persisted configuration currently contains:
+
+- `schemaVersion`
+- committed warning/fault thresholds for temperature and pressure
+- committed update interval
+- `logPage` view preferences for timestamp/source/level column visibility
+
 On Windows, the file is typically written to a path like:
 
 ```text
@@ -117,6 +148,7 @@ Behavior on startup:
 
 - if the file does not exist, defaults are used
 - if the file exists but is malformed or invalid, defaults are restored
+- missing or invalid persisted `logPage` preferences are repaired to defaults
 - repaired settings are written back to disk
 
 ## Build
@@ -339,16 +371,27 @@ Typical usage flow:
 
 1. Start the machine from the dashboard.
 2. Watch telemetry rise in the running state.
-3. Observe warning or fault transitions when thresholds are crossed.
+3. Observe warning, fault, reset, and recovery transitions when thresholds are crossed or faults are reset.
 4. Open the event log to inspect runtime and config activity.
-5. Open settings to edit thresholds or update interval.
+5. Open settings to apply a threshold preset or edit thresholds/update interval directly.
 6. Apply or revert the draft and confirm persistence across restarts.
+
+## Automated Tests
+
+The repository includes focused C++ tests for the non-UI application layers, including:
+
+- settings validation, JSON codec, file store, manager, draft, apply policy, and session behavior
+- alarm lifecycle transitions and threshold-triggered warning/fault behavior
+- fake backend assisted runtime/alarm scenarios
+
+The tests are wired through `tests/CMakeLists.txt` and enabled by the checked-in CMake presets.
 
 ## Current Limitations
 
 - The runtime is still driven by a simulated backend; there is no real device backend yet.
-- Alarm handling is still simple and does not implement a full industrial alarm lifecycle such as acknowledge/latched/cleared state modeling.
-- The automated test suite currently focuses on core C++ modules such as validation, settings persistence, apply policy, session state, draft behavior, and alarm transitions; it does not cover QML UI behavior end-to-end.
+- The alarm banner still presents one primary active metric at a time; the project does not yet implement a stacked or aggregated multi-alarm operator summary.
+- The project still does not model a full industrial alarm system with shelving, suppression, historian integration, or alarm acknowledgment as part of the alarm lifecycle itself.
+- The automated test suite currently focuses on core C++ modules and does not cover QML UI behavior end-to-end.
 - The project is currently organized as a single application target rather than a split core library plus app shell.
 
 ## Development Notes

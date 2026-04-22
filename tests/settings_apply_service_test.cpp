@@ -228,8 +228,8 @@ void SettingsApplyServiceTest::successfulApplyPersistsSnapshot()
     QVERIFY(service.applySettings(candidate));
     QCOMPARE(settingsManager.snapshot(), candidate);
 
-    const auto loaded = Settings::Store::loadSnapshot();
-    QCOMPARE(loaded.snapshot, candidate);
+    const auto loaded = Settings::Store::loadConfig();
+    QCOMPARE(loaded.config.snapshot, candidate);
     QVERIFY(!loaded.repaired);
     QVERIFY(loaded.reason.isEmpty());
 }
@@ -255,8 +255,8 @@ void SettingsApplyServiceTest::rejectedApplyDoesNotPersistSnapshot()
     QVERIFY(!service.applySettings(candidate));
     QCOMPARE(settingsManager.snapshot(), baseline);
 
-    const auto loaded = Settings::Store::loadSnapshot();
-    QCOMPARE(loaded.snapshot, baseline);
+    const auto loaded = Settings::Store::loadConfig();
+    QCOMPARE(loaded.config.snapshot, baseline);
     QVERIFY(!loaded.repaired);
 }
 

@@ -186,6 +186,8 @@ Item {
 
             // threshold lines + top-right limit legend
             if (root.thresholds && root.thresholds.length > 0) {
+                const thresholdLabels = []
+
                 for (let i = 0; i < root.thresholds.length; ++i) {
                     const threshold = root.thresholds[i]
                     if (!threshold || threshold.value === undefined)
@@ -213,7 +215,19 @@ Item {
 
                     ctx.font = "11px sans-serif"
                     const textWidth = ctx.measureText(labelText).width
-                    const boxWidth = textWidth + 12
+                    thresholdLabels.push({
+                        y: y,
+                        labelText: labelText,
+                        color: thresholdColor,
+                        textWidth: textWidth
+                    })
+                }
+
+                thresholdLabels.sort((left, right) => left.y - right.y)
+
+                for (let i = 0; i < thresholdLabels.length; ++i) {
+                    const thresholdLabel = thresholdLabels[i]
+                    const boxWidth = thresholdLabel.textWidth + 12
                     const boxHeight = 16
                     const boxX = root.clamp(w - boxWidth - 4, 0, w - boxWidth)
                     const boxY = 2 + (i * (boxHeight + 6))
@@ -221,14 +235,14 @@ Item {
                     ctx.fillStyle = root.thresholdLabelBackgroundColor
                     ctx.fillRect(boxX, boxY, boxWidth, boxHeight)
 
-                    ctx.strokeStyle = thresholdColor
+                    ctx.strokeStyle = thresholdLabel.color
                     ctx.strokeRect(boxX, boxY, boxWidth, boxHeight)
 
-                    ctx.fillStyle = thresholdColor
+                    ctx.fillStyle = thresholdLabel.color
                     ctx.fillRect(boxX + 4, boxY + 4, 4, boxHeight - 8)
 
                     ctx.fillStyle = root.thresholdLabelTextColor
-                    ctx.fillText(labelText, boxX + 12, boxY + 12)
+                    ctx.fillText(thresholdLabel.labelText, boxX + 12, boxY + 12)
 
                     occupiedLabelBoxes.push({
                         x: boxX,

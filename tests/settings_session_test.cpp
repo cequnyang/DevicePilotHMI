@@ -20,6 +20,9 @@ private slots:
     void initTestCase();
     void cleanup();
     void sessionStartsLoadedAndClean();
+    void presetLoadingUpdatesDraftProfileAndPendingCount();
+    void manualEditSwitchesDraftProfileToCustom();
+    void committedUpdateIntervalTracksManagerChanges();
     void invalidDraftDisablesApplyWithoutRestrictionReason();
     void idleDirtyValidDraftEnablesApply();
     void startingDisablesApplyWithReason();
@@ -61,6 +64,73 @@ void SettingsSessionTest::sessionStartsLoadedAndClean()
     QCOMPARE(session.draft()->updateIntervalMs(), settingsManager.snapshot().updateIntervalMs);
     QVERIFY(!session.draft()->dirty());
     QVERIFY(!session.applyEnabled());
+}
+
+void SettingsSessionTest::presetLoadingUpdatesDraftProfileAndPendingCount()
+{
+    QFile::remove(Settings::Store::configFilePath());
+
+    LogModel logModel;
+    LogInterface logInterface(logModel);
+    SettingsManager settingsManager(logInterface);
+    FakeMachineBackend backend;
+    MachineRuntime runtime(logInterface, backend);
+    SettingsApplyService service(logInterface, settingsManager, runtime);
+    SettingsSession session(logInterface, settingsManager, service);
+
+    QCOMPARE(session.committedThresholdPresetName(), QString("Balanced"));
+    QCOMPARE(session.draftThresholdPresetName(), QString("Balanced"));
+    QCOMPARE(session.pendingChangeCount(), 0);
+
+    session.loadConservativePreset();
+
+    QCOMPARE(session.draftThresholdPresetName(), QString("Conservative"));
+    QCOMPARE(session.committedThresholdPresetName(), QString("Balanced"));
+    QCOMPARE(session.pendingChangeCount(), 4);
+    QCOMPARE(session.draft()->updateIntervalMs(), settingsManager.snapshot().updateIntervalMs);
+    QVERIFY(session.draft()->dirty());
+}
+
+void SettingsSessionTest::manualEditSwitchesDraftProfileToCustom()
+{
+    QFile::remove(Settings::Store::configFilePath());
+
+    LogModel logModel;
+    LogInterface logInterface(logModel);
+    SettingsManager settingsManager(logInterface);
+    FakeMachineBackend backend;
+    MachineRuntime runtime(logInterface, backend);
+    SettingsApplyService service(logInterface, settingsManager, runtime);
+    SettingsSession session(logInterface, settingsManager, service);
+
+    session.loadAggressivePreset();
+    QCOMPARE(session.draftThresholdPresetName(), QString("Aggressive"));
+
+    session.draft()->setWarningTemperature(session.draft()->warningTemperature() - 1);
+
+    QCOMPARE(session.draftThresholdPresetName(), QString("Custom"));
+    QCOMPARE(session.pendingChangeCount(), 4);
+}
+
+void SettingsSessionTest::committedUpdateIntervalTracksManagerChanges()
+{
+    QFile::remove(Settings::Store::configFilePath());
+
+    LogModel logModel;
+    LogInterface logInterface(logModel);
+    SettingsManager settingsManager(logInterface);
+    FakeMachineBackend backend;
+    MachineRuntime runtime(logInterface, backend);
+    SettingsApplyService service(logInterface, settingsManager, runtime);
+    SettingsSession session(logInterface, settingsManager, service);
+
+    Settings::Snapshot candidate = settingsManager.snapshot();
+    candidate.updateIntervalMs += 300;
+    QVERIFY(settingsManager.applySnapshot(candidate));
+
+    QCOMPARE(session.committedUpdateIntervalMs(), candidate.updateIntervalMs);
+    QCOMPARE(session.pendingChangeCount(), 1);
+    QCOMPARE(session.draft()->updateIntervalMs(), Settings::Default::kUpdateIntervalMs);
 }
 
 void SettingsSessionTest::invalidDraftDisablesApplyWithoutRestrictionReason()

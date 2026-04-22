@@ -11,7 +11,9 @@ Rectangle {
     required property string scenarioText
     required property string riskText
     required property color riskColor
+    property string riskHeadlineText: ""
     property string riskDetailText: ""
+    property string riskHintText: ""
 
     radius: 12
     color: "#111827"
@@ -249,22 +251,48 @@ Rectangle {
         }
 
         Rectangle {
-            visible: root.riskDetailText.length > 0
+            visible: root.riskHeadlineText.length > 0 || root.riskDetailText.length > 0
+                || root.riskHintText.length > 0
             Layout.fillWidth: true
             radius: 10
             color: root.surfaceColor
             border.width: 1
             border.color: root.surfaceBorderColor
-            implicitHeight: riskDetailLabel.implicitHeight + 24
+            implicitHeight: riskDetailColumn.implicitHeight + 24
 
-            Label {
-                id: riskDetailLabel
+            ColumnLayout {
+                id: riskDetailColumn
                 anchors.fill: parent
                 anchors.margins: 12
-                text: root.riskDetailText
-                color: root.riskColor
-                wrapMode: Text.WordWrap
-                font.pixelSize: 13
+                spacing: 6
+
+                Label {
+                    visible: root.riskHeadlineText.length > 0
+                    Layout.fillWidth: true
+                    text: root.riskHeadlineText
+                    color: root.riskColor
+                    font.pixelSize: 14
+                    font.weight: Font.DemiBold
+                    wrapMode: Text.WordWrap
+                }
+
+                Label {
+                    visible: root.riskDetailText.length > 0
+                    Layout.fillWidth: true
+                    text: root.riskDetailText
+                    color: "#d1d5db"
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: 13
+                }
+
+                Label {
+                    visible: root.riskHintText.length > 0
+                    Layout.fillWidth: true
+                    text: root.riskHintText
+                    color: "#9fb7cf"
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: 12
+                }
             }
         }
     }

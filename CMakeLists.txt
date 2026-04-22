@@ -74,6 +74,8 @@ qt_add_qml_module(DevicePilotHMI
         src/log/log_interface.h
         src/log/log_interface.cpp
         src/settings/settings_defined.h
+        src/settings/settings_presets.h
+        src/settings/settings_presets.cpp
         src/settings/settings_manager.h
         src/settings/settings_manager.cpp
         src/settings/settings_draft.h
@@ -107,6 +109,30 @@ qt_add_qml_module(DevicePilotHMI
         qml/components/StateContextCard.qml
         qml/components/TrendChart.qml
 )
+
+set_source_files_properties(assets/icons/app_icon_normal.png PROPERTIES
+    QT_RESOURCE_ALIAS icons/app_icon_normal.png
+)
+set_source_files_properties(assets/icons/app_icon_warning.png PROPERTIES
+    QT_RESOURCE_ALIAS icons/app_icon_warning.png
+)
+set_source_files_properties(assets/icons/app_icon_fault.png PROPERTIES
+    QT_RESOURCE_ALIAS icons/app_icon_fault.png
+)
+
+qt_add_resources(DevicePilotHMI devicepilothmi_assets
+    PREFIX "/"
+    FILES
+        assets/icons/app_icon_normal.png
+        assets/icons/app_icon_warning.png
+        assets/icons/app_icon_fault.png
+)
+
+if (WIN32)
+    target_sources(DevicePilotHMI PRIVATE
+        resources/windows/app_icon.rc
+    )
+endif()
 
 set_target_properties(DevicePilotHMI PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"

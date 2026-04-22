@@ -6,45 +6,58 @@ import DevicePilotHMI
 Rectangle {
     id: root
 
-    required property string alarmText
+    required property string headline
+    required property string detail
+    required property string operatorHint
+    required property string stateLabel
     required property bool hasWarning
     required property bool isFault
+    required property bool recoveryActive
     property bool embedded: false
-    readonly property bool alertActive: root.hasWarning || root.isFault
-    readonly property string statusText: root.alertActive ? root.alarmText : "System normal"
-    readonly property string stateLabel: root.isFault ? "Fault" : (root.hasWarning ? "Warning" : "Normal")
+    readonly property bool emphasisActive: root.hasWarning || root.isFault || root.recoveryActive
+    readonly property string statusText: root.headline
     readonly property color severityColor: root.isFault ? "#ef4444" : (root.hasWarning ? "#f59e0b" : "#22c55e")
-    readonly property color embeddedBorderColor: root.isFault ? "#6b3941" : (root.hasWarning ? "#6a5a3b" : "#3f536a")
+    readonly property color embeddedBorderColor: root.isFault ? "#6b3941" : (root.hasWarning ? "#6a5a3b" : "#31504b")
+    readonly property color baseFillColor: root.embedded
+        ? (root.isFault ? "#18141a" : (root.hasWarning ? "#1a1713" : "#0e18265e"))
+        : (root.isFault ? "#2c1313" : (root.hasWarning ? "#2a1f0a" : "#0f172a"))
+    readonly property color embeddedAccentShellColor: Qt.rgba(root.severityColor.r,
+                                                              root.severityColor.g,
+                                                              root.severityColor.b,
+                                                              0.72)
+    readonly property int embeddedAccentWidth: root.embedded && root.emphasisActive ? 5 : 0
     readonly property int marqueeGap: 28
 
     implicitHeight: root.embedded ? 36 : 40
     radius: root.embedded ? 10 : 12
-    color: root.embedded
-        ? (root.isFault ? "#18141a" : (root.hasWarning ? "#1a1713" : "#0e18265e"))
-        : (root.isFault ? "#2c1313" : (root.hasWarning ? "#2a1f0a" : "#0f172a"))
+    color: root.embedded && root.emphasisActive ? root.embeddedAccentShellColor : root.baseFillColor
     border.width: 1
     border.color: root.embedded
         ? root.embeddedBorderColor
         : (root.isFault ? "#7f1d1d" : (root.hasWarning ? "#92400e" : "#2b3648"))
 
     Rectangle {
-        visible: root.embedded && root.alertActive
-        anchors.left: parent.left
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        anchors.leftMargin: 1
-        anchors.topMargin: 6
-        anchors.bottomMargin: 6
-        width: 3
-        radius: 2
-        color: root.severityColor
-        opacity: 0.72
+        visible: root.embedded && root.emphasisActive
+        anchors.fill: parent
+        anchors.leftMargin: root.embeddedAccentWidth
+        radius: root.radius
+        color: root.baseFillColor
     }
+
+    HoverHandler {
+        id: hover
+    }
+
+    ToolTip.visible: hover.hovered && (root.detail.length > 0 || root.operatorHint.length > 0)
+    ToolTip.delay: 250
+    ToolTip.text: root.operatorHint.length > 0
+        ? root.detail + "\n" + root.operatorHint
+        : root.detail
 
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: root.embedded ? 12 : 14
+        anchors.leftMargin: root.embedded ? 12 + root.embeddedAccentWidth : 14
         anchors.rightMargin: root.embedded ? 10 : 12
         anchors.topMargin: root.embedded ? 5 : 6
         anchors.bottomMargin: root.embedded ? 5 : 6
@@ -82,7 +95,7 @@ Rectangle {
                     id: marqueeText
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.statusText
-                    color: root.alertActive ? "#f8fafc" : (root.embedded ? "#d4deea" : "#cbd5e1")
+                    color: root.emphasisActive ? "#f8fafc" : (root.embedded ? "#d4deea" : "#cbd5e1")
                     font.pixelSize: root.embedded ? 12 : 13
                     font.weight: root.embedded ? Font.Medium : Font.DemiBold
                 }
@@ -124,12 +137,12 @@ Rectangle {
         Rectangle {
             radius: 999
             color: root.embedded
-                ? (root.isFault ? "#4a1818a0" : (root.hasWarning ? "#4a3411a0" : "#13223480"))
-                : (root.isFault ? "#3a1414" : (root.hasWarning ? "#3a2a0f" : "#132033"))
+                ? (root.isFault ? "#4a1818a0" : (root.hasWarning ? "#4a3411a0" : "#17322690"))
+                : (root.isFault ? "#3a1414" : (root.hasWarning ? "#3a2a0f" : "#132c22"))
             border.width: 1
             border.color: root.embedded
-                ? (root.isFault ? "#7d4a4ac0" : (root.hasWarning ? "#8a6a36c0" : "#4b627b"))
-                : (root.isFault ? "#7f1d1d" : (root.hasWarning ? "#92400e" : "#334155"))
+                ? (root.isFault ? "#7d4a4ac0" : (root.hasWarning ? "#8a6a36c0" : "#4c7c6c"))
+                : (root.isFault ? "#7f1d1d" : (root.hasWarning ? "#92400e" : "#2d6a4f"))
             implicitHeight: root.embedded ? 20 : 22
             implicitWidth: stateLabelText.implicitWidth + (root.embedded ? 12 : 14)
             Layout.alignment: Qt.AlignVCenter
@@ -138,7 +151,7 @@ Rectangle {
                 id: stateLabelText
                 anchors.centerIn: parent
                 text: root.stateLabel
-                color: root.isFault ? "#fecaca" : (root.hasWarning ? "#fcd34d" : "#a8d0f0")
+                color: root.isFault ? "#fecaca" : (root.hasWarning ? "#fcd34d" : "#bbf7d0")
                 font.pixelSize: root.embedded ? 10 : 11
                 font.weight: Font.DemiBold
             }
