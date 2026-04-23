@@ -210,6 +210,12 @@ Open a Developer PowerShell for Visual Studio 2022 first, then run:
 .\scripts\build.ps1 -Preset windows-msvc-debug
 ```
 
+The equivalent direct CMake command is:
+
+```powershell
+D:\Qt\Tools\CMake_64\bin\cmake.exe --build build/windows-msvc-debug --target ALL_BUILD --config Debug
+```
+
 If you need a clean rebuild after changing Qt, generators, or toolchains:
 
 ```powershell
@@ -311,6 +317,30 @@ For one-off shells, use `-Scope Process` instead.
 
 If you prefer local overrides instead of persistent user environment variables, use `CMakeUserPresets.json.example` as the starting point for a local `CMakeUserPresets.json`.
 
+### Qt Creator / MSVC Troubleshooting
+
+If Qt Creator reports:
+
+```text
+MSB1009: Project file does not exist.
+```
+
+first check whether CMake generated the MSVC project files:
+
+```powershell
+Test-Path .\build\windows-msvc-debug\DevicePilotHMI.vcxproj
+Test-Path .\build\windows-msvc-debug\ALL_BUILD.vcxproj
+```
+
+If those files exist, the CMake project is configured and the error usually means Qt Creator is invoking MSBuild with a stale or invalid local build/deploy step. In that case:
+
+- in `Projects > Build Settings`, select `DevicePilotHMI` or `ALL_BUILD` as the build target
+- in `Run/Deploy Settings`, use the normal desktop run/deploy configuration instead of an Application Manager package deploy step
+- remove empty custom build targets from deploy/package steps
+- if the kit state is still wrong, close Qt Creator and regenerate the local user configuration by moving aside `CMakeLists.txt.user` and `.qtcreator/CMakeLists.txt.user`, then reopen the project and select the MSVC preset again
+
+If the `.vcxproj` files are missing, reconfigure the preset or do a fresh rebuild after confirming that `QT_WIN_MSVC_ROOT` points to the matching Qt MSVC install, for example `C:\Qt\6.11.0\msvc2022_64`.
+
 ## Run
 
 There are two different runtime layouts:
@@ -381,8 +411,10 @@ Typical usage flow:
 The repository includes focused C++ tests for the non-UI application layers, including:
 
 - settings validation, JSON codec, file store, manager, draft, apply policy, and session behavior
-- alarm lifecycle transitions and threshold-triggered warning/fault behavior
-- fake backend assisted runtime/alarm scenarios
+- machine runtime start, stop, fault, and reset behavior against a controllable fake backend
+- simulated backend telemetry, state progression, scenario, and runtime integration behavior
+- alarm lifecycle transitions, threshold-triggered warning/fault behavior, and immediate reevaluation after applying threshold changes while running
+- fake backend assisted runtime/alarm scenarios across idle, starting, running, fault, reset, and recovery states
 
 The tests are wired through `tests/CMakeLists.txt` and enabled by the checked-in CMake presets.
 

@@ -78,6 +78,25 @@ target_link_libraries(settings_apply_service_tests PRIVATE
 add_test(NAME settings_apply_service_tests COMMAND settings_apply_service_tests)
 configure_test_runtime(settings_apply_service_tests settings_apply_service_tests)
 
+add_executable(machine_runtime_tests
+    machine_runtime_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/backend/machine_backend.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/runtime/machine_runtime.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_file_store.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_json_codec.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_validation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_interface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_model.cpp
+)
+
+target_link_libraries(machine_runtime_tests PRIVATE
+    test_common
+    Qt6::Qml
+)
+
+add_test(NAME machine_runtime_tests COMMAND machine_runtime_tests)
+configure_test_runtime(machine_runtime_tests machine_runtime_tests)
+
 add_executable(settings_manager_tests
     settings_manager_test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_manager.cpp
@@ -148,6 +167,7 @@ add_executable(alarm_manager_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/backend/machine_backend.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/alarm/alarm_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/runtime/machine_runtime.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_apply_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_file_store.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_json_codec.cpp
@@ -163,3 +183,27 @@ target_link_libraries(alarm_manager_tests PRIVATE
 
 add_test(NAME alarm_manager_tests COMMAND alarm_manager_tests)
 configure_test_runtime(alarm_manager_tests alarm_manager_tests)
+
+add_executable(simulated_machine_backend_tests
+    simulated_machine_backend_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/backend/machine_backend.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/backend/simulated_machine_backend.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/backend/simulation_scenario.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/backend/simulation_strategy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_apply_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_manager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_file_store.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_json_codec.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_validation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/runtime/machine_runtime.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_interface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_model.cpp
+)
+
+target_link_libraries(simulated_machine_backend_tests PRIVATE
+    test_common
+    Qt6::Qml
+)
+
+add_test(NAME simulated_machine_backend_tests COMMAND simulated_machine_backend_tests)
+configure_test_runtime(simulated_machine_backend_tests simulated_machine_backend_tests)
