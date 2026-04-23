@@ -1,2 +1,0 @@
-47:    const auto updateWindowIcon = [&app, &alarmManager]() {
-63:    QObject::connect(&alarmManager, &AlarmManager::alarmChanged, &app, updateWindowIcon);
