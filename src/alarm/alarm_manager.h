@@ -8,7 +8,7 @@
 #include <qqmlintegration.h>
 
 class LogInterface;
-class LogEvent;
+struct LogEvent;
 class SettingsManager;
 class MachineRuntime;
 

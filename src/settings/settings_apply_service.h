@@ -8,7 +8,7 @@
 #include "settings/settings_defined.h"
 
 class LogInterface;
-class LogEvent;
+struct LogEvent;
 class SettingsManager;
 class MachineRuntime;
 

@@ -9,7 +9,7 @@
 #include <qqmlintegration.h>
 
 class MachineBackend;
-class LogEvent;
+struct LogEvent;
 class LogInterface;
 
 #include "runtime/machine_types.h"
