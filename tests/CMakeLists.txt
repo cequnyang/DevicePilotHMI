@@ -1,5 +1,11 @@
 add_library(test_common INTERFACE)
 
+set(logging_sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/app_logging.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_interface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_model.cpp
+)
+
 target_include_directories(test_common INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
 )
@@ -66,8 +72,7 @@ add_executable(settings_apply_service_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_json_codec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_validation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/runtime/machine_runtime.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_interface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_model.cpp
+    ${logging_sources}
 )
 
 target_link_libraries(settings_apply_service_tests PRIVATE
@@ -85,8 +90,7 @@ add_executable(machine_runtime_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_file_store.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_json_codec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_validation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_interface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_model.cpp
+    ${logging_sources}
 )
 
 target_link_libraries(machine_runtime_tests PRIVATE
@@ -103,8 +107,7 @@ add_executable(settings_manager_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_file_store.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_json_codec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_validation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_interface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_model.cpp
+    ${logging_sources}
 )
 
 target_link_libraries(settings_manager_tests PRIVATE
@@ -126,8 +129,7 @@ add_executable(settings_draft_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_file_store.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_json_codec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_validation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_interface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_model.cpp
+    ${logging_sources}
 )
 
 target_link_libraries(settings_draft_tests PRIVATE
@@ -150,8 +152,7 @@ add_executable(settings_session_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_json_codec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_validation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/runtime/machine_runtime.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_interface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_model.cpp
+    ${logging_sources}
 )
 
 target_link_libraries(settings_session_tests PRIVATE
@@ -172,8 +173,7 @@ add_executable(alarm_manager_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_file_store.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_json_codec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_validation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_interface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_model.cpp
+    ${logging_sources}
 )
 
 target_link_libraries(alarm_manager_tests PRIVATE
@@ -196,8 +196,7 @@ add_executable(simulated_machine_backend_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_json_codec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/settings/settings_validation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/runtime/machine_runtime.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_interface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/log_model.cpp
+    ${logging_sources}
 )
 
 target_link_libraries(simulated_machine_backend_tests PRIVATE

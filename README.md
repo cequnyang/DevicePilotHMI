@@ -8,6 +8,7 @@ The project focuses on:
 - a backend interface that keeps the application layer separate from the simulator implementation
 - a threshold-based warning/fault lifecycle with reset and recovery presentation
 - an event log with filtering, acknowledgment, and persisted column visibility
+- session-based runtime log files for engineering and troubleshooting
 - editable, validated, preset-driven, and persisted settings
 - a cleaner C++/QML integration boundary than a typical all-in-QML demo
 
@@ -17,6 +18,7 @@ The project focuses on:
 - Alarm banner with structured copy (`headline`, `detail`, `operatorHint`, `stateLabel`) instead of one generic text string
 - Alarm lifecycle states for `Normal`, `WarningActive`, `FaultLatched`, `ResetRequested`, and `RecoveryNotice`
 - Event log page with level filter, text search, "only unacknowledged" filtering, and persisted column visibility
+- Session log files written through Qt logging categories during application startup, runtime transitions, settings operations, and alarm changes
 - Settings page with threshold presets (`Conservative`, `Balanced`, `Aggressive`), draft editing, validation, apply/reload/factory defaults flow, and JSON persistence
 - Runtime-aware settings policy:
   - all changes are allowed while the machine is idle
@@ -47,11 +49,14 @@ The app is split into three top-level pages:
 - `Event Log`
   - shows runtime, config, warning, and fault events
   - supports filtering, acknowledgment, and column visibility preferences
+  - remains an in-memory operator-facing event stream exposed through `LogModel`
 - `Settings`
   - edits warning/fault thresholds and update interval
   - supports `Conservative`, `Balanced`, and `Aggressive` threshold presets
   - validates input before applying
   - persists committed settings and log view preferences to JSON
+
+Separate from the `Event Log` page, the application also writes session log files under the platform local app-data directory for engineering diagnostics.
 
 ## Runtime Behavior
 
@@ -150,6 +155,42 @@ Behavior on startup:
 - if the file exists but is malformed or invalid, defaults are restored
 - missing or invalid persisted `logPage` preferences are repaired to defaults
 - repaired settings are written back to disk
+
+## Runtime Logging
+
+In addition to the in-app `Event Log` page, the application writes engineering-oriented session log files during startup and runtime.
+
+The current implementation uses Qt logging categories for:
+
+- `devicepilothmi.bootstrap`
+- `devicepilothmi.runtime`
+- `devicepilothmi.alarm`
+- `devicepilothmi.settings`
+- `devicepilothmi.persistence`
+- `devicepilothmi.backend`
+- `devicepilothmi.ui`
+
+The session logger currently records:
+
+- application startup, shutdown, and QML load success/failure
+- settings initialization, apply success/rejection, validation failures, and persisted value changes
+- settings file load success, repair flows, and persistence failures
+- runtime start/stop/reset requests, machine state transitions, and fault reset completion
+- alarm warning/fault/recovery lifecycle events
+- backend scenario changes
+
+To avoid unbounded growth, the logger currently keeps the most recent `10` session log files.
+
+On Windows, session logs are typically written to a path like:
+
+```text
+C:\Users\<User>\AppData\Local\DevicePilotHMI\logs\devicepilothmi-<timestamp>-<pid>.log
+```
+
+The `Event Log` page and the session log files intentionally serve different purposes:
+
+- the `Event Log` page is an in-memory business/event stream intended for UI inspection and filtering
+- the session log files are durable engineering logs intended for troubleshooting and post-run inspection
 
 ## Build
 
