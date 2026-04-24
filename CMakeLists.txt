@@ -67,6 +67,8 @@ qt_add_qml_module(DevicePilotHMI
         src/backend/simulation_strategy.h
         src/backend/simulation_strategy.cpp
         src/log/log_event.h
+        src/log/app_logging.h
+        src/log/app_logging.cpp
         src/log/log_model.h
         src/log/log_model.cpp
         src/log/log_filter_proxy_model.h

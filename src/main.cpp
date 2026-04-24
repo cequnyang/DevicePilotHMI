@@ -9,6 +9,7 @@
 
 #include "alarm/alarm_manager.h"
 #include "backend/simulated_machine_backend.h"
+#include "log/app_logging.h"
 #include "backend/simulation_control.h"
 #include "log/log_filter_proxy_model.h"
 #include "log/log_interface.h"
@@ -33,6 +34,18 @@ int main(int argc, char *argv[])
 
     QQuickStyle::setStyle("Basic");
     QGuiApplication app(argc, argv);
+    AppLogging::initialize();
+
+    if (AppLogging::fileLoggingEnabled()) {
+        qCInfo(lcBootstrap).noquote()
+            << QString("Session log file: %1").arg(AppLogging::sessionLogFilePath());
+    } else {
+        const QString reason = AppLogging::lastError().isEmpty()
+                                   ? QString("unknown initialization failure")
+                                   : AppLogging::lastError();
+        qCWarning(lcBootstrap).noquote() << QString("File logging disabled (%1)").arg(reason);
+    }
+    qCInfo(lcBootstrap) << "Application startup";
 
     LogModel logModel;
     LogInterface logInterface(logModel);
@@ -70,7 +83,10 @@ int main(int argc, char *argv[])
         &engine,
         &QQmlApplicationEngine::objectCreationFailed,
         &app,
-        []() { QCoreApplication::exit(-1); },
+        []() {
+            qCCritical(lcBootstrap) << "QML object creation failed. Exiting.";
+            QCoreApplication::exit(-1);
+        },
         Qt::QueuedConnection);
 
     engine.setInitialProperties({{"simulCtrl", QVariant::fromValue(&simulationControl)},
@@ -81,7 +97,14 @@ int main(int argc, char *argv[])
                                  {"settingsManager", QVariant::fromValue(&settingsManager)},
                                  {"settingsSession", QVariant::fromValue(&settingsSession)}});
 
+    qCInfo(lcBootstrap) << "Loading main QML module";
     engine.loadFromModule("DevicePilotHMI", "Main");
+    if (!engine.rootObjects().isEmpty()) {
+        qCInfo(lcBootstrap) << "Main QML module loaded";
+    }
 
-    return app.exec();
+    const int exitCode = app.exec();
+    qCInfo(lcBootstrap) << "Application exiting with code" << exitCode;
+    AppLogging::shutdown();
+    return exitCode;
 }

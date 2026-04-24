@@ -1,5 +1,6 @@
 #include "log/log_interface.h"
 
+#include "log/app_logging.h"
 #include "log/log_model.h"
 
 LogInterface::LogInterface(LogModel &logModel, QObject *parent)
@@ -12,4 +13,5 @@ LogInterface::LogInterface(LogModel &logModel, QObject *parent)
 void LogInterface::appendLog(const LogEvent &event)
 {
     m_logModel->addLog(event);
+    AppLogging::mirrorEvent(event);
 }
