@@ -9,7 +9,7 @@
 #include "settings/settings_presets.h"
 
 class LogInterface;
-class LogEvent;
+struct LogEvent;
 class SettingsApplyService;
 
 using Settings::Snapshot;

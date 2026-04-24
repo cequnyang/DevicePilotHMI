@@ -8,7 +8,7 @@
 #include "backend/simulation_scenario.h"
 #include "backend/simulation_strategy.h"
 
-class LogEvent;
+struct LogEvent;
 class LogInterface;
 class SettingsManager;
 
