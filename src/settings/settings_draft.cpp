@@ -135,7 +135,7 @@ void SettingsDraft::setUpdateIntervalMs(int value)
 
 void SettingsDraft::loadFrom(SettingsManager *settings)
 {
-    if (!settings) {
+    if (settings == nullptr) {
         return;
     }
 

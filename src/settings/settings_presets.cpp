@@ -59,9 +59,9 @@ QString Settings::Presets::thresholdPresetName(ThresholdPresetId id)
 
 bool Settings::Presets::matchesThresholdPreset(const Snapshot &snapshot, ThresholdPresetId id)
 {
-    const auto Values = valuesForPreset(id);
-    return snapshot.warningTemperature == Values.warningTemperature
-           && snapshot.faultTemperature == Values.faultTemperature
-           && snapshot.warningPressure == Values.warningPressure
-           && snapshot.faultPressure == Values.faultPressure;
+    const auto values = valuesForPreset(id);
+    return snapshot.warningTemperature == values.warningTemperature
+           && snapshot.faultTemperature == values.faultTemperature
+           && snapshot.warningPressure == values.warningPressure
+           && snapshot.faultPressure == values.faultPressure;
 }

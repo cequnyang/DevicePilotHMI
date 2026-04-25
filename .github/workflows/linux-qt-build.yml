@@ -112,5 +112,4 @@ jobs:
       - name: Run Clang-Tidy
         shell: bash
         run: |
-          source_files=$(jq -r '.[].file' build/compile_commands.json | grep /src/ | sort -u)
-          clang-tidy -p build/compile_commands.json --config-file=.clang-tidy --warnings-as-errors=* $source_files 2>&1 || { echo "Clang-Tidy issues found"; exit 1; }
+          python3 scripts/invoke_clang_tidy.py --build-dir build --config-file .clang-tidy --quiet
