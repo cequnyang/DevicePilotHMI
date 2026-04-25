@@ -30,10 +30,11 @@ Settings::ValidationResult Settings::validateSnapshot(const Snapshot &snapshot)
                     + QString::number(Settings::HighThreshold::kFaultPressure) + "."};
     }
 
-    if (snapshot.updateIntervalMs < 100
+    if (snapshot.updateIntervalMs < Settings::MinThreshold::kUpdateIntervalMs
         || Settings::HighThreshold::kUpdateIntervalMs < snapshot.updateIntervalMs) {
         return {false,
-                "Update interval must be between 100 and "
+                "Update interval must be between "
+                    + QString::number(Settings::MinThreshold::kUpdateIntervalMs) + " and "
                     + QString::number(Settings::HighThreshold::kUpdateIntervalMs) + " ms."};
     }
 

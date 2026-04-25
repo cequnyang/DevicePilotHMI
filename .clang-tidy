@@ -1,0 +1,65 @@
+Checks: >
+  -*,
+  bugprone-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -cppcoreguidelines-avoid-magic-codes,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-bounds-pointerarithmetics,
+  -readability-avoid-underscore-in-variables-inside-namespace,
+  -readability-named-parameter,
+  -performance-move-const-arg,
+  -performance-no-int-to-ptr,
+  -bugprone-reserved-identifier,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+  -portability-restrict-std-namespaces,
+  -clang-analyzer-cplusplus.StdLibraryDepsException,
+  -bugprone-macro-parentheses,
+  -bugprone-narrowing-conversions,
+  -cppcoreguidelines-special-member-functions,
+  -hicpp-special-member-functions,
+  -clang-analyzer-cplusplus.SmartPtr
+
+WarningsAsErrors: ''
+
+CheckOptions:
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.VariableCase
+    value: camelCase
+  - key: readability-identifier-naming.PrivateMemberPrefix
+    value: m_
+  - key: readability-identifier-naming.ProtectedMemberPrefix
+    value: m_
+  - key: readability-identifier-naming.MemberCase
+    value: camelCase
+  - key: readability-identifier-naming.ConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.ParameterCase
+    value: camelCase
+  - key: readability-identifier-naming.MacroCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key: readability-identifier-naming.GlobalVariableCase
+    value: camelCase
+  - key: readability-identifier-naming.StaticVariableCase
+    value: camelCase
+  - key: bugprone-use-after-move.WithMoveStrictness
+    value: 2
+  - key: bugprone-chained-comparison.MaxChainDepth
+    value: '3'

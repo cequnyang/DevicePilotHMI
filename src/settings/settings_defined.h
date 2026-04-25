@@ -53,6 +53,10 @@ inline constexpr int kFaultPressure = 150;
 inline constexpr int kUpdateIntervalMs = 5000;
 } // namespace HighThreshold
 
+namespace MinThreshold {
+inline constexpr int kUpdateIntervalMs = 100;
+} // namespace MinThreshold
+
 constexpr Snapshot kDefaultSnapshot{Default::kWarningTemperature,
                                     Default::kFaultTemperature,
                                     Default::kWarningPressure,

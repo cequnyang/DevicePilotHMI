@@ -81,3 +81,36 @@ jobs:
         shell: bash
         run: |
           ctest --preset linux-ninja-release --parallel
+
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4.3.1
+        with:
+          version: 6.11.0
+          aqtversion: ==3.3.*
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+
+      - name: Install Clang Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy cmake ninja-build
+
+      - name: Configure
+        shell: bash
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Run Clang-Tidy
+        shell: bash
+        run: |
+          source_files=$(jq -r '.[].file' build/compile_commands.json | grep /src/ | sort -u)
+          clang-tidy -p build/compile_commands.json --config-file=.clang-tidy --warnings-as-errors=* $source_files 2>&1 || { echo "Clang-Tidy issues found"; exit 1; }
