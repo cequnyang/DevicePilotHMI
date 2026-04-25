@@ -226,3 +226,50 @@ jobs:
           name: ${{ matrix.package_name }}
           path: release/${{ matrix.package_name }}.zip
           if-no-files-found: error
+
+  clang-tidy:
+    name: clang-tidy
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4.3.1
+        with:
+          version: 6.11.0
+          aqtsource: git+https://github.com/miurahr/aqtinstall.git
+          host: windows
+          target: desktop
+          arch: win64_mingw
+          tools: tools_mingw1310
+
+      - name: Install Clang Tools
+        shell: pwsh
+        run: |
+          choco install -y llvm
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          $ninja = Get-Command ninja -ErrorAction Stop
+          $mingwToolsRoot = Join-Path $env:IQTA_TOOLS 'mingw1310_64'
+          $env:QT_WIN_MINGW_ROOT = $env:QT_ROOT_DIR -replace '\\', '/'
+          $env:QT_WIN_MINGW_TOOLS_ROOT = $mingwToolsRoot -replace '\\', '/'
+          $env:QT_WIN_NINJA_ROOT = (Split-Path $ninja.Source -Parent) -replace '\\', '/'
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Run Clang-Tidy
+        shell: pwsh
+        run: |
+          $llvmPath = "C:\Program Files\LLVM\bin"
+          $env:PATH = "$llvmPath;$env:PATH"
+          $compileDb = Get-Content build/compile_commands.json -Raw | ConvertFrom-Json
+          $sourceFiles = $compileDb.file | Where-Object { $_ -match "/src/" } | Select-Object -Unique
+          $content = clang-tidy -p build/compile_commands.json --config-file=.clang-tidy --warnings-as-errors=* $sourceFiles 2>&1
+          if ($content) {
+            Write-Host "Clang-Tidy issues found:"
+            Write-Host $content
+            exit 1
+          }

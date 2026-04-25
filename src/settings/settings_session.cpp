@@ -156,25 +156,25 @@ QString SettingsSession::thresholdPresetNameForSnapshot(const Snapshot &snapshot
 {
     using Settings::Presets::ThresholdPresetId;
 
-    constexpr ThresholdPresetId kPresets[] = {
+    constexpr std::array<ThresholdPresetId, 3> kPresets = {{
         ThresholdPresetId::Conservative,
         ThresholdPresetId::Balanced,
         ThresholdPresetId::Aggressive,
-    };
+    }};
 
-    for (const auto preset : kPresets) {
-        if (Settings::Presets::matchesThresholdPreset(snapshot, preset)) {
-            return Settings::Presets::thresholdPresetName(preset);
+    for (const auto presetItem : kPresets) {
+        if (Settings::Presets::matchesThresholdPreset(snapshot, presetItem)) {
+            return Settings::Presets::thresholdPresetName(presetItem);
         }
     }
 
     return QStringLiteral("Custom");
 }
 
-void SettingsSession::loadThresholdPreset(Settings::Presets::ThresholdPresetId id)
+void SettingsSession::loadThresholdPreset(Settings::Presets::ThresholdPresetId presetId)
 {
     m_draft->loadSnapshot(
-        Settings::Presets::thresholdPresetSnapshot(id, m_draft->updateIntervalMs()));
+        Settings::Presets::thresholdPresetSnapshot(presetId, m_draft->updateIntervalMs()));
 }
 
 void SettingsSession::appendLog(const LogEvent &event)
