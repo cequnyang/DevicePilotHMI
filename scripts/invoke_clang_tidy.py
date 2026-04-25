@@ -9,6 +9,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -38,9 +39,11 @@ def path_is_under(path: Path, root: Path) -> bool:
         return False
 
 
-def collect_source_files(compile_db: list[dict[str, str]], source_roots: list[Path]) -> list[Path]:
+def collect_source_entries(
+    compile_db: list[dict[str, str]], source_roots: list[Path]
+) -> list[dict[str, str]]:
     seen: set[str] = set()
-    source_files: list[Path] = []
+    source_entries: list[dict[str, str]] = []
 
     for entry in compile_db:
         if "file" not in entry or "directory" not in entry:
@@ -58,9 +61,11 @@ def collect_source_files(compile_db: list[dict[str, str]], source_roots: list[Pa
             continue
 
         seen.add(key)
-        source_files.append(file_path)
+        source_entry = dict(entry)
+        source_entry["file"] = os.fspath(file_path)
+        source_entries.append(source_entry)
 
-    return source_files
+    return source_entries
 
 
 def make_path_regex(path: Path) -> str:
@@ -111,7 +116,8 @@ def main() -> int:
     with compile_commands.open("r", encoding="utf-8") as file:
         compile_db = json.load(file)
 
-    source_files = collect_source_files(compile_db, source_roots)
+    source_entries = collect_source_entries(compile_db, source_roots)
+    source_files = [resolve_compile_entry_file(entry) for entry in source_entries]
     if not source_files:
         print("No project source files found for clang-tidy.", file=sys.stderr)
         print(f"Compile database: {compile_commands}", file=sys.stderr)
@@ -120,24 +126,44 @@ def main() -> int:
             print(f"  {source_root}", file=sys.stderr)
         return 2
 
+    print(f"Running clang-tidy on {len(source_files)} source files from {compile_commands}")
+    if args.dry_run:
+        for source_file in source_files:
+            print(source_file)
+        return 0
+
+    # clang-tidy analyzes every compile database entry that matches a file.
+    # CMake lists shared .cpp files once per target, so filter to one command per source
+    # to avoid repeated diagnostics from generated test targets.
+    with tempfile.TemporaryDirectory(prefix="clang-tidy-", dir=build_dir) as filtered_build_dir:
+        filtered_compile_commands = Path(filtered_build_dir) / "compile_commands.json"
+        with filtered_compile_commands.open("w", encoding="utf-8") as file:
+            json.dump(source_entries, file, indent=2)
+            file.write("\n")
+
+        return run_clang_tidy(args, Path(filtered_build_dir), config_file, source_roots, source_files)
+
+
+def run_clang_tidy(
+    args: argparse.Namespace,
+    build_dir: Path,
+    config_file: Path,
+    source_roots: list[Path],
+    source_files: list[Path],
+) -> int:
     command = [
         args.clang_tidy,
         "-p",
         str(build_dir),
         f"--config-file={config_file}",
         f"--header-filter={args.header_filter or make_header_filter(source_roots)}",
+        "--extra-arg=-w",
     ]
     if args.warnings_as_errors:
         command.append(f"--warnings-as-errors={args.warnings_as_errors}")
     if args.quiet:
         command.append("--quiet")
     command.extend(str(source_file) for source_file in source_files)
-
-    print(f"Running clang-tidy on {len(source_files)} source files from {compile_commands}")
-    if args.dry_run:
-        for source_file in source_files:
-            print(source_file)
-        return 0
 
     try:
         completed = subprocess.run(command, check=False)

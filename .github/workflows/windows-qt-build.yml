@@ -57,15 +57,22 @@ jobs:
         run: |
           $ninja = Get-Command ninja -ErrorAction Stop
           $mingwToolsRoot = Join-Path $env:IQTA_TOOLS 'mingw1310_64'
+          $mingwBin = Join-Path $mingwToolsRoot 'bin'
+          $qtBin = Join-Path $env:QT_ROOT_DIR 'bin'
+          $ninjaRoot = Split-Path $ninja.Source -Parent
           "QT_WIN_MINGW_ROOT=$($env:QT_ROOT_DIR -replace '\\','/')" >> $env:GITHUB_ENV
           "QT_WIN_MINGW_TOOLS_ROOT=$($mingwToolsRoot -replace '\\','/')" >> $env:GITHUB_ENV
-          "QT_WIN_NINJA_ROOT=$((Split-Path $ninja.Source -Parent) -replace '\\','/')" >> $env:GITHUB_ENV
+          "QT_WIN_NINJA_ROOT=$($ninjaRoot -replace '\\','/')" >> $env:GITHUB_ENV
+          $qtBin >> $env:GITHUB_PATH
+          $mingwBin >> $env:GITHUB_PATH
+          $ninjaRoot >> $env:GITHUB_PATH
 
       - name: Export Preset Environment (MSVC)
         if: matrix.label == 'msvc'
         shell: pwsh
         run: |
           "QT_WIN_MSVC_ROOT=$($env:QT_ROOT_DIR -replace '\\','/')" >> $env:GITHUB_ENV
+          (Join-Path $env:QT_ROOT_DIR 'bin') >> $env:GITHUB_PATH
 
       - name: Configure and Build
         shell: pwsh
@@ -128,15 +135,22 @@ jobs:
         run: |
           $ninja = Get-Command ninja -ErrorAction Stop
           $mingwToolsRoot = Join-Path $env:IQTA_TOOLS 'mingw1310_64'
+          $mingwBin = Join-Path $mingwToolsRoot 'bin'
+          $qtBin = Join-Path $env:QT_ROOT_DIR 'bin'
+          $ninjaRoot = Split-Path $ninja.Source -Parent
           "QT_WIN_MINGW_ROOT=$($env:QT_ROOT_DIR -replace '\\','/')" >> $env:GITHUB_ENV
           "QT_WIN_MINGW_TOOLS_ROOT=$($mingwToolsRoot -replace '\\','/')" >> $env:GITHUB_ENV
-          "QT_WIN_NINJA_ROOT=$((Split-Path $ninja.Source -Parent) -replace '\\','/')" >> $env:GITHUB_ENV
+          "QT_WIN_NINJA_ROOT=$($ninjaRoot -replace '\\','/')" >> $env:GITHUB_ENV
+          $qtBin >> $env:GITHUB_PATH
+          $mingwBin >> $env:GITHUB_PATH
+          $ninjaRoot >> $env:GITHUB_PATH
 
       - name: Export Preset Environment (MSVC)
         if: matrix.label == 'msvc'
         shell: pwsh
         run: |
           "QT_WIN_MSVC_ROOT=$($env:QT_ROOT_DIR -replace '\\','/')" >> $env:GITHUB_ENV
+          (Join-Path $env:QT_ROOT_DIR 'bin') >> $env:GITHUB_PATH
 
       - name: Download Build Tree
         uses: actions/download-artifact@v8
@@ -199,15 +213,22 @@ jobs:
         run: |
           $ninja = Get-Command ninja -ErrorAction Stop
           $mingwToolsRoot = Join-Path $env:IQTA_TOOLS 'mingw1310_64'
+          $mingwBin = Join-Path $mingwToolsRoot 'bin'
+          $qtBin = Join-Path $env:QT_ROOT_DIR 'bin'
+          $ninjaRoot = Split-Path $ninja.Source -Parent
           "QT_WIN_MINGW_ROOT=$($env:QT_ROOT_DIR -replace '\\','/')" >> $env:GITHUB_ENV
           "QT_WIN_MINGW_TOOLS_ROOT=$($mingwToolsRoot -replace '\\','/')" >> $env:GITHUB_ENV
-          "QT_WIN_NINJA_ROOT=$((Split-Path $ninja.Source -Parent) -replace '\\','/')" >> $env:GITHUB_ENV
+          "QT_WIN_NINJA_ROOT=$($ninjaRoot -replace '\\','/')" >> $env:GITHUB_ENV
+          $qtBin >> $env:GITHUB_PATH
+          $mingwBin >> $env:GITHUB_PATH
+          $ninjaRoot >> $env:GITHUB_PATH
 
       - name: Export Preset Environment (MSVC)
         if: matrix.label == 'msvc'
         shell: pwsh
         run: |
           "QT_WIN_MSVC_ROOT=$($env:QT_ROOT_DIR -replace '\\','/')" >> $env:GITHUB_ENV
+          (Join-Path $env:QT_ROOT_DIR 'bin') >> $env:GITHUB_PATH
 
       - name: Download Build Tree
         uses: actions/download-artifact@v8
