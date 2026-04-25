@@ -85,12 +85,15 @@ void OverloadStrategy::advance(TelemetryFrame &telemetry, const Settings::Snapsh
     const double speedRatio = telemetry.speed / 3600.0;
     const double heatSoak = std::max(0.0, (telemetry.temperature - 60.0) / 35.0);
 
-    const int targetSpeed = static_cast<int>(3000 + 400 * loadRamp);
-    const int speedStep = std::max(1, static_cast<int>((120 + 40 * loadRamp) * dt));
+    const int targetSpeed = static_cast<int>(3000 + (400 * loadRamp));
+    const int speedStep = std::max(1, static_cast<int>((120 + (40 * loadRamp)) * dt));
 
     telemetry.speed = stepTowards(telemetry.speed, targetSpeed, speedStep);
-    telemetry.temperature += (1.4 + 0.8 * loadRamp + 0.5 * speedRatio + 0.5 * heatSoak) * dt;
-    telemetry.pressure += (0.9 + 0.7 * loadRamp + 0.4 * speedRatio + 0.3 * heatSoak) * dt;
+    telemetry.temperature += (1.4 + (0.8 * loadRamp) + (0.5 * speedRatio)
+                              + (0.5 * heatSoak))
+                             * dt;
+    telemetry.pressure += (0.9 + (0.7 * loadRamp) + (0.4 * speedRatio) + (0.3 * heatSoak))
+                          * dt;
 }
 
 // CoolingFailureStrategy
@@ -166,14 +169,14 @@ void LoadStepResponseStrategy::advance(TelemetryFrame &telemetry, const Settings
     }
 
     case Phase::LoadStep: {
-        telemetry.temperature += (2.0 + 0.3 * speedRatio) * dt;
-        telemetry.pressure += (2.8 + 0.5 * speedRatio) * dt;
+        telemetry.temperature += (2.0 + (0.3 * speedRatio)) * dt;
+        telemetry.pressure += (2.8 + (0.5 * speedRatio)) * dt;
         telemetry.speed = stepTowards(telemetry.speed, 2400, speedStep);
         break;
     }
 
     case Phase::ControlRecovery: {
-        telemetry.temperature += (1.5 + 0.2 * heatSoak) * dt;
+        telemetry.temperature += (1.5 + (0.2 * heatSoak)) * dt;
         telemetry.pressure += 1.0 * dt;
         telemetry.speed = stepTowards(telemetry.speed, 2900, speedStep);
         break;

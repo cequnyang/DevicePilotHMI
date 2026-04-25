@@ -16,8 +16,9 @@ LogModel *LogFilterProxyModel::sourceLogModel() const
 
 void LogFilterProxyModel::setSourceLogModel(LogModel *model)
 {
-    if (m_sourceLogModel == model)
+    if (m_sourceLogModel == model) {
         return;
+    }
 
     m_sourceLogModel = model;
     setSourceModel(model);
@@ -35,8 +36,9 @@ QString LogFilterProxyModel::levelFilter() const
 
 void LogFilterProxyModel::setLevelFilter(const QString &level)
 {
-    if (m_levelFilter == level)
+    if (m_levelFilter == level) {
         return;
+    }
 
     m_levelFilter = level;
 
@@ -52,8 +54,9 @@ QString LogFilterProxyModel::searchText() const
 
 void LogFilterProxyModel::setSearchText(const QString &text)
 {
-    if (m_searchText == text)
+    if (m_searchText == text) {
         return;
+    }
 
     m_searchText = text;
 
@@ -69,8 +72,9 @@ bool LogFilterProxyModel::showOnlyUnacknowledged() const
 
 void LogFilterProxyModel::setShowOnlyUnacknowledged(bool value)
 {
-    if (m_showOnlyUnacknowledged == value)
+    if (m_showOnlyUnacknowledged == value) {
         return;
+    }
 
     m_showOnlyUnacknowledged = value;
 
@@ -86,8 +90,9 @@ bool LogFilterProxyModel::newestFirst() const
 
 void LogFilterProxyModel::setNewestFirst(bool value)
 {
-    if (m_newestFirst == value)
+    if (m_newestFirst == value) {
         return;
+    }
 
     m_newestFirst = value;
     sort(0, m_newestFirst ? Qt::DescendingOrder : Qt::AscendingOrder);
@@ -96,24 +101,28 @@ void LogFilterProxyModel::setNewestFirst(bool value)
 
 void LogFilterProxyModel::setAcknowledged(int proxyRow, bool acknowledged)
 {
-    if (!m_sourceLogModel)
+    if (m_sourceLogModel == nullptr) {
         return;
+    }
 
     const QModelIndex proxyIndex = index(proxyRow, 0);
-    if (!proxyIndex.isValid())
+    if (!proxyIndex.isValid()) {
         return;
+    }
 
     const QModelIndex sourceIndex = mapToSource(proxyIndex);
-    if (!sourceIndex.isValid())
+    if (!sourceIndex.isValid()) {
         return;
+    }
 
     m_sourceLogModel->setData(sourceIndex, acknowledged, LogModel::AcknowledgedRole);
 }
 
 bool LogFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-    if (!m_sourceLogModel)
+    if (m_sourceLogModel == nullptr) {
         return false;
+    }
 
     const QModelIndex idx = m_sourceLogModel->index(sourceRow, 0, sourceParent);
 

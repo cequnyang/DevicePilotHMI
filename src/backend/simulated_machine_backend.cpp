@@ -109,7 +109,7 @@ void SimulatedMachineBackend::setScenario(Simulation::Scenario scenario)
                             Simulation::stateToString(m_scenario)),
     });
     m_simulationStrategy = makeSimulationStrategy(scenario);
-    m_simulationStrategy->reset();
+    (*m_simulationStrategy).reset();
     resetTelemetryToIdle();
     publishTelemetry();
     emit scenarioChanged();
@@ -131,7 +131,7 @@ void SimulatedMachineBackend::onTransitionTimeout()
     case PendingTransition::FinishStart:
         m_pendingTransition = PendingTransition::None;
         if (m_simulationStrategy) {
-            m_simulationStrategy->reset();
+            (*m_simulationStrategy).reset();
             m_telemetry.speed = m_simulationStrategy->startupSpeed(m_settings->snapshot());
         }
         publishTelemetry();

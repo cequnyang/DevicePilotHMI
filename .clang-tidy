@@ -6,25 +6,37 @@ Checks: >
   performance-*,
   portability-*,
   readability-*,
-  -cppcoreguidelines-avoid-magic-codes,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
   -cppcoreguidelines-pro-type-reinterpret-cast,
-  -cppcoreguidelines-pro-bounds-pointerarithmetics,
-  -readability-avoid-underscore-in-variables-inside-namespace,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-use-enum-class,
+  -readability-convert-member-functions-to-static,
+  -readability-identifier-length,
   -readability-named-parameter,
+  -readability-magic-numbers,
+  -readability-redundant-access-specifiers,
+  -readability-static-accessed-through-instance,
   -performance-move-const-arg,
+  -performance-enum-size,
   -performance-no-int-to-ptr,
   -bugprone-reserved-identifier,
   -modernize-use-trailing-return-type,
   -modernize-avoid-c-arrays,
-  -portability-restrict-std-namespaces,
-  -clang-analyzer-cplusplus.StdLibraryDepsException,
+  -portability-avoid-pragma-once,
   -bugprone-macro-parentheses,
   -bugprone-narrowing-conversions,
   -cppcoreguidelines-special-member-functions,
   -hicpp-special-member-functions,
-  -clang-analyzer-cplusplus.SmartPtr
+  -clang-analyzer-cplusplus.SmartPtrModeling
 
 WarningsAsErrors: ''
+HeaderFilterRegex: '(^|[\\/])src[\\/].*'
+ExcludeHeaderFilterRegex: '(^|[\\/])(build|\.qt|CMakeFiles)[\\/].*'
+SystemHeaders: false
 
 CheckOptions:
   - key: readability-identifier-naming.ClassCase
@@ -34,18 +46,28 @@ CheckOptions:
   - key: readability-identifier-naming.FunctionCase
     value: camelBack
   - key: readability-identifier-naming.VariableCase
-    value: camelCase
+    value: camelBack
   - key: readability-identifier-naming.PrivateMemberPrefix
     value: m_
   - key: readability-identifier-naming.ProtectedMemberPrefix
     value: m_
   - key: readability-identifier-naming.MemberCase
-    value: camelCase
+    value: camelBack
   - key: readability-identifier-naming.ConstantCase
     value: CamelCase
+  - key: readability-identifier-naming.GlobalConstantPrefix
+    value: k
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.StaticConstantPrefix
+    value: k
+  - key: readability-identifier-naming.StaticConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.LocalConstantCase
+    value: camelBack
   - key: readability-identifier-naming.ParameterCase
-    value: camelCase
-  - key: readability-identifier-naming.MacroCase
+    value: camelBack
+  - key: readability-identifier-naming.MacroDefinitionCase
     value: UPPER_CASE
   - key: readability-identifier-naming.EnumCase
     value: CamelCase
@@ -56,10 +78,6 @@ CheckOptions:
   - key: readability-identifier-naming.TypedefCase
     value: CamelCase
   - key: readability-identifier-naming.GlobalVariableCase
-    value: camelCase
+    value: camelBack
   - key: readability-identifier-naming.StaticVariableCase
-    value: camelCase
-  - key: bugprone-use-after-move.WithMoveStrictness
-    value: 2
-  - key: bugprone-chained-comparison.MaxChainDepth
-    value: '3'
+    value: camelBack

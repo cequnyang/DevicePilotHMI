@@ -265,11 +265,4 @@ jobs:
         run: |
           $llvmPath = "C:\Program Files\LLVM\bin"
           $env:PATH = "$llvmPath;$env:PATH"
-          $compileDb = Get-Content build/compile_commands.json -Raw | ConvertFrom-Json
-          $sourceFiles = $compileDb.file | Where-Object { $_ -match "/src/" } | Select-Object -Unique
-          $content = clang-tidy -p build/compile_commands.json --config-file=.clang-tidy --warnings-as-errors=* $sourceFiles 2>&1
-          if ($content) {
-            Write-Host "Clang-Tidy issues found:"
-            Write-Host $content
-            exit 1
-          }
+          python scripts/invoke_clang_tidy.py --build-dir build --config-file .clang-tidy --quiet
