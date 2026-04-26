@@ -1,4 +1,4 @@
-name: Linux Qt Build
+name: Linux Qt Build on self-hosted
 
 on:
   push:
@@ -10,9 +10,15 @@ on:
 jobs:
   build-linux:
     name: build-linux
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, linux, x64, "107174"]
 
     steps:
+      - name: Clean Workspace
+        shell: bash
+        run: |
+          echo "Cleaning workspace: $GITHUB_WORKSPACE"
+          rm -rf "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* "$GITHUB_WORKSPACE"/..?* || true
+
       - name: Checkout
         uses: actions/checkout@v5
 
@@ -49,10 +55,16 @@ jobs:
 
   run-tests:
     name: run-tests
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, linux, x64, "107174"]
     needs: build-linux
 
     steps:
+      - name: Clean Workspace
+        shell: bash
+        run: |
+          echo "Cleaning workspace: $GITHUB_WORKSPACE"
+          rm -rf "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* "$GITHUB_WORKSPACE"/..?* || true
+
       - name: Checkout
         uses: actions/checkout@v5
 
@@ -84,9 +96,15 @@ jobs:
 
   clang-tidy:
     name: clang-tidy
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, linux, x64, "107174"]
 
     steps:
+      - name: Clean Workspace
+        shell: bash
+        run: |
+          echo "Cleaning workspace: $GITHUB_WORKSPACE"
+          rm -rf "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* "$GITHUB_WORKSPACE"/..?* || true
+
       - name: Checkout
         uses: actions/checkout@v5
 
