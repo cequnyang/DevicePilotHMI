@@ -79,8 +79,7 @@ bool LogModel::setData(const QModelIndex &index, const QVariant &value, int role
 
     Entry &entry = m_entries[row];
 
-    switch (role) {
-    case AcknowledgedRole: {
+    if (role == AcknowledgedRole) {
         const bool acknowledged = value.toBool();
         if (entry.acknowledged == acknowledged) {
             return false;
@@ -90,9 +89,8 @@ bool LogModel::setData(const QModelIndex &index, const QVariant &value, int role
         emit dataChanged(index, index, {AcknowledgedRole});
         return true;
     }
-    default:
-        return false;
-    }
+
+    return false;
 }
 
 void LogModel::addLog(const LogEvent &event)

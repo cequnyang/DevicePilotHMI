@@ -169,7 +169,7 @@ public:
 
     void initialize()
     {
-        QMutexLocker locker(&m_mutex);
+        const const QMutexLocker locker(&m_mutex);
         if (m_initialized) {
             return;
         }
@@ -183,7 +183,7 @@ public:
             return;
         }
 
-        QDir directory;
+        const QDir directory;
         if (!directory.mkpath(m_logDirectoryPath)) {
             m_lastError = QString("Failed to create log directory (%1)").arg(m_logDirectoryPath);
             m_previousHandler = qInstallMessageHandler(&SessionFileLogger::messageHandler);
@@ -208,7 +208,7 @@ public:
 
     void shutdown()
     {
-        QMutexLocker locker(&m_mutex);
+        const QMutexLocker locker(&m_mutex);
         if (!m_initialized) {
             return;
         }
@@ -227,19 +227,19 @@ public:
 
     bool fileLoggingEnabled() const
     {
-        QMutexLocker locker(&m_mutex);
+        const QMutexLocker locker(&m_mutex);
         return m_file.isOpen();
     }
 
     QString sessionLogFilePath() const
     {
-        QMutexLocker locker(&m_mutex);
+        const QMutexLocker locker(&m_mutex);
         return m_logFilePath;
     }
 
     QString lastError() const
     {
-        QMutexLocker locker(&m_mutex);
+        const QMutexLocker locker(&m_mutex);
         return m_lastError;
     }
 
@@ -247,7 +247,7 @@ public:
     {
         const QString formatted = qFormatLogMessage(type, context, msg);
         {
-            QMutexLocker locker(&m_mutex);
+            const QMutexLocker locker(&m_mutex);
             if (m_file.isOpen()) {
                 writeLineLocked(formatted);
             }
@@ -266,7 +266,7 @@ private:
 
     void cleanupOldSessionLogsLocked()
     {
-        QDir directory(m_logDirectoryPath);
+        const QDir directory(m_logDirectoryPath);
         QFileInfoList files = directory.entryInfoList({QString("%1-*.log").arg(logFilePrefix())},
                                                       QDir::Files);
         std::sort(files.begin(), files.end(), [](const QFileInfo &left, const QFileInfo &right) {
