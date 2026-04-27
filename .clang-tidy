@@ -5,63 +5,120 @@ Checks: >
   portability-*,
   clang-analyzer-core.*,
   clang-analyzer-cplusplus.*,
+
+  cppcoreguidelines-pro-type-member-init,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-prefer-member-initializer,
+
+  modernize-use-override,
+  modernize-use-nullptr,
+  modernize-use-equals-default,
+  modernize-use-equals-delete,
+  modernize-use-default-member-init,
+
   readability-identifier-naming,
+  readability-braces-around-statements,
+  readability-duplicate-include,
+  readability-else-after-return,
+  readability-container-size-empty,
+  readability-redundant-string-init,
+
+  modernize-concat-nested-namespaces,
+
   -bugprone-easily-swappable-parameters,
   -bugprone-exception-escape,
   -bugprone-reserved-identifier,
   -bugprone-macro-parentheses,
   -bugprone-narrowing-conversions,
+
   -performance-move-const-arg,
   -performance-enum-size,
   -performance-no-int-to-ptr,
+
   -portability-avoid-pragma-once,
+
   -clang-analyzer-cplusplus.NewDelete,
-  -clang-analyzer-cplusplus.SmartPtrModeling
+  -clang-analyzer-cplusplus.SmartPtrModeling,
+
+  -readability-function-size,
 
 WarningsAsErrors: ''
+
 HeaderFilterRegex: '(^|[\\/])src[\\/].*'
+
 SystemHeaders: false
 
 CheckOptions:
+  # =========================
+  # naming style
+  # =========================
+
   - key: readability-identifier-naming.ClassCase
     value: CamelCase
+
   - key: readability-identifier-naming.StructCase
     value: CamelCase
+
   - key: readability-identifier-naming.FunctionCase
     value: camelBack
+
   - key: readability-identifier-naming.VariableCase
     value: camelBack
-  - key: readability-identifier-naming.PrivateMemberPrefix
-    value: m_
-  - key: readability-identifier-naming.ProtectedMemberPrefix
-    value: m_
+
   - key: readability-identifier-naming.MemberCase
     value: camelBack
+
+  - key: readability-identifier-naming.PrivateMemberPrefix
+    value: m_
+
+  - key: readability-identifier-naming.ProtectedMemberPrefix
+    value: m_
+
   - key: readability-identifier-naming.ConstantCase
     value: CamelCase
+
   - key: readability-identifier-naming.GlobalConstantPrefix
     value: k
+
   - key: readability-identifier-naming.GlobalConstantCase
     value: CamelCase
+
   - key: readability-identifier-naming.StaticConstantPrefix
     value: k
+
   - key: readability-identifier-naming.StaticConstantCase
     value: CamelCase
+
   - key: readability-identifier-naming.LocalConstantCase
     value: camelBack
+
   - key: readability-identifier-naming.ParameterCase
     value: camelBack
+
   - key: readability-identifier-naming.MacroDefinitionCase
     value: UPPER_CASE
+
   - key: readability-identifier-naming.EnumCase
     value: CamelCase
+
   - key: readability-identifier-naming.EnumConstantCase
     value: CamelCase
+
   - key: readability-identifier-naming.TypeAliasCase
     value: CamelCase
+
   - key: readability-identifier-naming.TypedefCase
     value: CamelCase
+
   - key: readability-identifier-naming.GlobalVariableCase
     value: camelBack
+
   - key: readability-identifier-naming.StaticVariableCase
     value: camelBack
+
+  # =========================
+  # readability
+  # =========================
+
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: '0'
