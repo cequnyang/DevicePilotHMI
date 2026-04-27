@@ -3,6 +3,7 @@
 #include <QAbstractEventDispatcher>
 #include <QMetaType>
 #include <algorithm>
+#include <cmath>
 #include <chrono>
 #include <format>
 #include <string>
@@ -158,6 +159,32 @@ int MachineRuntime::historyStartSampleIndex() const
 }
 
 namespace {
+// Match the precision used in the dashboard. Temperature is rendered to one
+// decimal place, pressure to two, so property notifications should follow the
+// rounded display value rather than raw floating-point noise.
+constexpr int kTemperatureDisplayDecimals = 1;
+constexpr int kPressureDisplayDecimals = 2;
+
+long long quantizedDisplayValue(double value, int decimals)
+{
+    switch (decimals) {
+    case 0:
+        return std::llround(value);
+    case 1:
+        return std::llround(value * 10.0);
+    case 2:
+        return std::llround(value * 100.0);
+    default:
+        return std::llround(value * std::pow(10.0, decimals));
+    }
+}
+
+bool displayValueChanged(double previousValue, double currentValue, int decimals)
+{
+    return quantizedDisplayValue(previousValue, decimals)
+           != quantizedDisplayValue(currentValue, decimals);
+}
+
 std::string formatDuration(long long totalSeconds)
 {
     auto hms = std::chrono::hh_mm_ss{std::chrono::seconds{totalSeconds}};
@@ -269,24 +296,28 @@ int markerSampleIndex(const QVariant &markerValue)
 
 void MachineRuntime::onTelemetryReceived(TelemetryFrame frame)
 {
-    bool telemetryChanged = false;
+    const bool temperatureVisibleChanged
+        = displayValueChanged(m_temperature,
+                              frame.temperature,
+                              kTemperatureDisplayDecimals);
+    const bool pressureVisibleChanged
+        = displayValueChanged(m_pressure, frame.pressure, kPressureDisplayDecimals);
+    const bool speedValueChanged = m_speed != frame.speed;
 
-    if (m_temperature != frame.temperature) {
-        m_temperature = frame.temperature;
+    m_temperature = frame.temperature;
+    m_pressure = frame.pressure;
+    m_speed = frame.speed;
+
+    if (temperatureVisibleChanged) {
         emit temperatureChanged();
-        telemetryChanged = true;
     }
 
-    if (m_pressure != frame.pressure) {
-        m_pressure = frame.pressure;
+    if (pressureVisibleChanged) {
         emit pressureChanged();
-        telemetryChanged = true;
     }
 
-    if (m_speed != frame.speed) {
-        m_speed = frame.speed;
+    if (speedValueChanged) {
         emit speedChanged();
-        telemetryChanged = true;
     }
 
     m_lastSampleIndex = m_nextSampleIndex++;
@@ -298,7 +329,7 @@ void MachineRuntime::onTelemetryReceived(TelemetryFrame frame)
     m_historyStartSampleIndex = std::max(0, m_nextSampleIndex - historySize);
     trimHistoryMarkers();
 
-    if (telemetryChanged && m_state == State::Running) {
+    if (m_state == State::Running) {
         emit evaluateAlarm();
     }
     emit historyChanged();

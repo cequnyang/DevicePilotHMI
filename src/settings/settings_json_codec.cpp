@@ -3,6 +3,7 @@
 #include <QJsonDocument>
 
 #include <cmath>
+#include <limits>
 #include <QStringList>
 
 namespace {
@@ -60,7 +61,10 @@ Settings::JsonCodec::DecodeResult Settings::JsonCodec::jsonToConfig(const QJsonO
         }
 
         const double raw = value.toDouble();
-        if (!std::isfinite(raw) || std::floor(raw) != raw) {
+        if (!std::isfinite(raw)
+            || raw < static_cast<double>(std::numeric_limits<int>::min())
+            || raw > static_cast<double>(std::numeric_limits<int>::max())
+            || raw != std::trunc(raw)) {
             reason = QString("Field '%1' must be an integer.").arg(QString::fromLatin1(key));
             return false;
         }

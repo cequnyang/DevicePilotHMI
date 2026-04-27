@@ -15,6 +15,7 @@ private slots:
     void jsonToConfigRejectsMissingSchemaVersion();
     void jsonToConfigRejectsMissingSnapshotKey();
     void jsonToConfigRejectsInvalidSnapshotValue();
+    void jsonToConfigRejectsFractionalSnapshotValue();
     void decodeConfigRejectsInvalidJson();
     void decodeConfigRejectsNonObjectRoot();
 };
@@ -159,6 +160,23 @@ void SettingsJsonCodecTest::jsonToConfigRejectsInvalidSnapshotValue()
 
     QVERIFY(!result.ok);
     QVERIFY(result.reason.contains("is not a number"));
+}
+
+void SettingsJsonCodecTest::jsonToConfigRejectsFractionalSnapshotValue()
+{
+    const QJsonObject obj{
+        {"schemaVersion", Settings::JsonCodec::kSchemaVersion},
+        {"warningTemperature", 75.5},
+        {"faultTemperature", 95},
+        {"warningPressure", 115},
+        {"faultPressure", 135},
+        {"updateIntervalMs", 1000},
+    };
+
+    const auto result = Settings::JsonCodec::jsonToConfig(obj);
+
+    QVERIFY(!result.ok);
+    QVERIFY(result.reason.contains("must be an integer"));
 }
 
 void SettingsJsonCodecTest::decodeConfigRejectsInvalidJson()
