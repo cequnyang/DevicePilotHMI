@@ -60,7 +60,8 @@ Settings::JsonCodec::DecodeResult Settings::JsonCodec::jsonToConfig(const QJsonO
         }
 
         const double raw = value.toDouble();
-        if (!std::isfinite(raw) || std::floor(raw) != raw) {
+        constexpr double epsilon = 1e-9;
+        if (!std::isfinite(raw) || std::abs(std::floor(raw) - raw) > epsilon) {
             reason = QString("Field '%1' must be an integer.").arg(QString::fromLatin1(key));
             return false;
         }

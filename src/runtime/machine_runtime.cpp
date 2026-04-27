@@ -271,13 +271,14 @@ void MachineRuntime::onTelemetryReceived(TelemetryFrame frame)
 {
     bool telemetryChanged = false;
 
-    if (m_temperature != frame.temperature) {
+    constexpr double epsilon = 1e-9;
+    if (std::abs(m_temperature - frame.temperature) > epsilon) {
         m_temperature = frame.temperature;
         emit temperatureChanged();
         telemetryChanged = true;
     }
 
-    if (m_pressure != frame.pressure) {
+    if (std::abs(m_pressure - frame.pressure) > epsilon) {
         m_pressure = frame.pressure;
         emit pressureChanged();
         telemetryChanged = true;

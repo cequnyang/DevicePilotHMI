@@ -11,6 +11,12 @@ class SimulationStrategy
 public:
     virtual ~SimulationStrategy() = default;
 
+    SimulationStrategy() = default;
+    SimulationStrategy(const SimulationStrategy &) = delete;
+    SimulationStrategy &operator=(const SimulationStrategy &) = delete;
+    SimulationStrategy(SimulationStrategy &&) = delete;
+    SimulationStrategy &operator=(SimulationStrategy &&) = delete;
+
     virtual Simulation::Scenario scenario() const = 0;
 
     virtual int startupSpeed(const Settings::Snapshot &settings) const = 0;
