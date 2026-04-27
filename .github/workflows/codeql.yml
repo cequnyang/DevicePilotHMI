@@ -58,6 +58,40 @@ jobs:
           ./scripts/build.sh --preset linux-ninja-debug --skip-tests --fresh
 
       - name: Perform CodeQL Analysis
+        id: codeql-analyze
         uses: github/codeql-action/analyze@v4
         with:
+          category: "/language:c-cpp"
+          output: sarif-results
+          upload: failure-only
+
+      # Manual C/C++ CodeQL analysis follows the observed compiler invocations,
+      # so generated Qt/CMake files are filtered from the uploaded alerts instead
+      # of relying on paths-ignore to scope a build-backed database.
+      - name: Locate CodeQL SARIF
+        id: codeql-sarif
+        shell: bash
+        run: |
+          set -euo pipefail
+          sarif_dir="${{ steps.codeql-analyze.outputs.sarif-output }}"
+          sarif_file="$(find "$sarif_dir" -name '*.sarif' -print -quit)"
+          if [[ -z "$sarif_file" ]]; then
+            echo "No CodeQL SARIF file found in $sarif_dir" >&2
+            exit 1
+          fi
+          echo "path=$sarif_file" >> "$GITHUB_OUTPUT"
+
+      - name: Filter generated build results
+        uses: advanced-security/filter-sarif@v1
+        with:
+          patterns: |
+            -build/**
+            -**/build/**
+          input: ${{ steps.codeql-sarif.outputs.path }}
+          output: ${{ steps.codeql-sarif.outputs.path }}
+
+      - name: Upload filtered SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: ${{ steps.codeql-sarif.outputs.path }}
           category: "/language:c-cpp"

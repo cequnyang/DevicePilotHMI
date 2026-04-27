@@ -18,6 +18,7 @@ private slots:
     void initTestCase();
     void cleanup();
     void startFlowTransitionsIdleToStartingToRunning();
+    void telemetryUpdatesUseDisplayPrecisionButStillReevaluateAlarm();
 };
 
 void MachineRuntimeTest::initTestCase()
@@ -69,6 +70,36 @@ void MachineRuntimeTest::startFlowTransitionsIdleToStartingToRunning()
     QCOMPARE(markers.size(), 2);
     QCOMPARE(markers.at(0).toMap().value("kind").toString(), QString("start"));
     QCOMPARE(markers.at(1).toMap().value("kind").toString(), QString("running"));
+}
+
+void MachineRuntimeTest::telemetryUpdatesUseDisplayPrecisionButStillReevaluateAlarm()
+{
+    LogModel logModel;
+    LogInterface logInterface(logModel);
+    FakeMachineBackend backend;
+    MachineRuntime runtime(logInterface, backend);
+    QSignalSpy temperatureSpy(&runtime, &MachineRuntime::temperatureChanged);
+    QSignalSpy pressureSpy(&runtime, &MachineRuntime::pressureChanged);
+    QSignalSpy speedSpy(&runtime, &MachineRuntime::speedChanged);
+    QSignalSpy alarmSpy(&runtime, &MachineRuntime::evaluateAlarm);
+
+    runtime.start();
+    backend.publishState(MachineState::Running);
+
+    temperatureSpy.clear();
+    pressureSpy.clear();
+    speedSpy.clear();
+    alarmSpy.clear();
+
+    backend.publishTelemetry(25.04, 80.004, 0);
+
+    QCOMPARE(runtime.temperature(), 25.04);
+    QCOMPARE(runtime.pressure(), 80.004);
+    QCOMPARE(runtime.speed(), 0);
+    QCOMPARE(temperatureSpy.count(), 0);
+    QCOMPARE(pressureSpy.count(), 0);
+    QCOMPARE(speedSpy.count(), 0);
+    QCOMPARE(alarmSpy.count(), 1);
 }
 
 QTEST_APPLESS_MAIN(MachineRuntimeTest)
