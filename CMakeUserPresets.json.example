@@ -27,6 +27,13 @@
       ]
     },
     {
+      "name": "linux-ninja-debug-local",
+      "inherits": [
+        "local-qt-paths",
+        "linux-ninja-debug"
+      ]
+    },
+    {
       "name": "linux-ninja-release-local",
       "inherits": [
         "local-qt-paths",
