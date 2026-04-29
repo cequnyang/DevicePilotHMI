@@ -94,11 +94,14 @@
       "description": "Debug build for the Windows MinGW kit with Ninja.",
       "inherits": "windows-mingw-base",
       "binaryDir": "${sourceDir}/build/windows-mingw-debug",
-      "installDir": "${sourceDir}/build/windows-mingw-debug/stage",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": {
           "type": "STRING",
           "value": "Debug"
+        },
+        "CMAKE_INSTALL_PREFIX": {
+          "type": "PATH",
+          "value": "${sourceDir}/build/windows-mingw-debug/stage"
         }
       }
     },
@@ -108,11 +111,14 @@
       "description": "Release build for the Windows MinGW kit with Ninja.",
       "inherits": "windows-mingw-base",
       "binaryDir": "${sourceDir}/build/windows-mingw-release",
-      "installDir": "${sourceDir}/build/windows-mingw-release/stage",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": {
           "type": "STRING",
           "value": "Release"
+        },
+        "CMAKE_INSTALL_PREFIX": {
+          "type": "PATH",
+          "value": "${sourceDir}/build/windows-mingw-release/stage"
         }
       }
     },
@@ -122,11 +128,14 @@
       "description": "Debug build for the Windows MSVC 2022 kit with the Visual Studio generator.",
       "inherits": "windows-msvc-base",
       "binaryDir": "${sourceDir}/build/windows-msvc-debug",
-      "installDir": "${sourceDir}/build/windows-msvc-debug/stage",
       "cacheVariables": {
         "CMAKE_CONFIGURATION_TYPES": {
           "type": "STRING",
           "value": "Debug"
+        },
+        "CMAKE_INSTALL_PREFIX": {
+          "type": "PATH",
+          "value": "${sourceDir}/build/windows-msvc-debug/stage"
         }
       }
     },
@@ -136,11 +145,14 @@
       "description": "Release build for the Windows MSVC 2022 kit with the Visual Studio generator.",
       "inherits": "windows-msvc-base",
       "binaryDir": "${sourceDir}/build/windows-msvc-release",
-      "installDir": "${sourceDir}/build/windows-msvc-release/stage",
       "cacheVariables": {
         "CMAKE_CONFIGURATION_TYPES": {
           "type": "STRING",
           "value": "Release"
+        },
+        "CMAKE_INSTALL_PREFIX": {
+          "type": "PATH",
+          "value": "${sourceDir}/build/windows-msvc-release/stage"
         }
       }
     },
@@ -151,11 +163,14 @@
       "inherits": "linux-common",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/linux-ninja-debug",
-      "installDir": "${sourceDir}/build/linux-ninja-debug/stage",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": {
           "type": "STRING",
           "value": "Debug"
+        },
+        "CMAKE_INSTALL_PREFIX": {
+          "type": "PATH",
+          "value": "${sourceDir}/build/linux-ninja-debug/stage"
         }
       }
     },
@@ -166,11 +181,14 @@
       "inherits": "linux-common",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/linux-ninja-release",
-      "installDir": "${sourceDir}/build/linux-ninja-release/stage",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": {
           "type": "STRING",
           "value": "Release"
+        },
+        "CMAKE_INSTALL_PREFIX": {
+          "type": "PATH",
+          "value": "${sourceDir}/build/linux-ninja-release/stage"
         }
       }
     }
