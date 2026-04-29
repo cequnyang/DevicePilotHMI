@@ -64,7 +64,7 @@ Settings::JsonCodec::DecodeResult Settings::JsonCodec::jsonToConfig(const QJsonO
         if (!std::isfinite(raw)
             || raw < static_cast<double>(std::numeric_limits<int>::min())
             || raw > static_cast<double>(std::numeric_limits<int>::max())
-            || raw != std::trunc(raw)) {
+            || std::fabs(raw - std::trunc(raw)) > std::numeric_limits<double>::epsilon()) {
             reason = QString("Field '%1' must be an integer.").arg(QString::fromLatin1(key));
             return false;
         }
